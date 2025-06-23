@@ -27,13 +27,14 @@ const AddCustomerModal = ({ open, onOpenChange }: AddCustomerModalProps) => {
     email: '',
     phone: '',
     company: '',
+    password: '',
     status: 'Active' as 'Active' | 'Inactive'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.company) {
+    if (!formData.name || !formData.email || !formData.company || !formData.password) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -55,6 +56,7 @@ const AddCustomerModal = ({ open, onOpenChange }: AddCustomerModalProps) => {
         email: '',
         phone: '',
         company: '',
+        password: '',
         status: 'Active'
       });
       
@@ -93,6 +95,17 @@ const AddCustomerModal = ({ open, onOpenChange }: AddCustomerModalProps) => {
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               placeholder="Enter email address"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="password">Password *</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Enter password"
             />
           </div>
           

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
@@ -24,7 +23,7 @@ interface TicketStats {
 
 interface DataContextType {
   customers: Customer[];
-  addCustomer: (customer: Omit<Customer, 'id' | 'tickets' | 'joinDate'>) => void;
+  addCustomer: (customer: Omit<Customer, 'id' | 'tickets' | 'joinDate'> & { password: string }) => void;
   ticketStats: TicketStats;
   updateProfile: (data: { firstName: string; lastName: string; email: string }) => Promise<boolean>;
   updateNotificationSettings: (settings: { email: boolean; desktop: boolean; slack: boolean }) => void;
@@ -99,13 +98,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const addCustomer = (customerData: Omit<Customer, 'id' | 'tickets' | 'joinDate'>) => {
+  const addCustomer = (customerData: Omit<Customer, 'id' | 'tickets' | 'joinDate'> & { password: string }) => {
+    const { password, ...customerInfo } = customerData;
+    
     const newCustomer: Customer = {
-      ...customerData,
+      ...customerInfo,
       id: Date.now().toString(),
       tickets: 0,
       joinDate: new Date().toISOString().split('T')[0],
     };
+    
+    // Store password separately (in a real app, this would be hashed and stored securely)
+    console.log(`Password for ${customerData.email}: ${password}`);
     
     const updatedCustomers = [...customers, newCustomer];
     setCustomers(updatedCustomers);
