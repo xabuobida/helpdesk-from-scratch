@@ -2,8 +2,10 @@
 import { Calendar, Home, Inbox, Search, Settings, TicketIcon, Users, BarChart3, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "./UserMenu";
 
-const sidebarItems = [
+const adminSidebarItems = [
   {
     title: "Overview",
     url: "/",
@@ -36,17 +38,41 @@ const sidebarItems = [
   },
 ];
 
+const customerSidebarItems = [
+  {
+    title: "My Tickets",
+    url: "/tickets",
+    icon: TicketIcon,
+  },
+  {
+    title: "Chat Support",
+    url: "/chat",
+    icon: MessageSquare,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
+  },
+];
+
 export function Sidebar() {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const sidebarItems = user?.role === 'customer' ? customerSidebarItems : adminSidebarItems;
+  const logoText = user?.role === 'customer' ? 'Support' : 'Helpdesk';
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">H</span>
+            <span className="text-white font-bold text-sm">
+              {user?.role === 'customer' ? 'S' : 'H'}
+            </span>
           </div>
-          <span className="text-xl font-semibold text-gray-900">Helpdesk</span>
+          <span className="text-xl font-semibold text-gray-900">{logoText}</span>
         </div>
       </div>
       
@@ -75,15 +101,7 @@ export function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-gray-700 text-sm font-medium">SM</span>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900">Sophie Minders</p>
-            <p className="text-xs text-gray-500">@sophie</p>
-          </div>
-        </div>
+        <UserMenu />
       </div>
     </div>
   );

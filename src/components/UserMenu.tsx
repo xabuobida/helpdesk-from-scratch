@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,9 +35,15 @@ const UserMenu = () => {
           Role: {user.role}
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/logout" className="text-red-600 w-full">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={logout} className="text-red-600">
           <LogOut className="w-4 h-4 mr-2" />
-          Logout
+          Quick Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
