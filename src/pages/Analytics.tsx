@@ -1,6 +1,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useData } from "@/contexts/DataContext";
 
 const ticketData = [
   { name: "Mon", open: 12, resolved: 8 },
@@ -12,17 +13,19 @@ const ticketData = [
   { name: "Sun", open: 5, resolved: 4 },
 ];
 
-const statusData = [
-  { name: "Open", value: 45, color: "#3B82F6" },
-  { name: "In Progress", value: 25, color: "#F59E0B" },
-  { name: "Resolved", value: 30, color: "#10B981" },
-];
-
 const Analytics = () => {
+  const { ticketStats, customers } = useData();
+
+  const statusData = [
+    { name: "Open", value: ticketStats.open, color: "#3B82F6" },
+    { name: "In Progress", value: ticketStats.inProgress, color: "#F59E0B" },
+    { name: "Resolved", value: ticketStats.resolved, color: "#10B981" },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Analytics</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Analytics Dashboard</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -30,8 +33,8 @@ const Analytics = () => {
               <CardTitle className="text-sm font-medium text-gray-600">Total Tickets</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
-              <p className="text-xs text-green-600">+12% from last month</p>
+              <div className="text-2xl font-bold">{ticketStats.total}</div>
+              <p className="text-xs text-green-600">Real-time data</p>
             </CardContent>
           </Card>
           
@@ -40,18 +43,18 @@ const Analytics = () => {
               <CardTitle className="text-sm font-medium text-gray-600">Resolved</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">987</div>
-              <p className="text-xs text-green-600">+8% from last month</p>
+              <div className="text-2xl font-bold">{ticketStats.resolved}</div>
+              <p className="text-xs text-green-600">{Math.round((ticketStats.resolved / ticketStats.total) * 100)}% resolution rate</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Avg Response Time</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Active Customers</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.4h</div>
-              <p className="text-xs text-red-600">+5% from last month</p>
+              <div className="text-2xl font-bold">{customers.filter(c => c.status === 'Active').length}</div>
+              <p className="text-xs text-blue-600">Out of {customers.length} total</p>
             </CardContent>
           </Card>
           
@@ -60,8 +63,8 @@ const Analytics = () => {
               <CardTitle className="text-sm font-medium text-gray-600">Customer Satisfaction</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">94%</div>
-              <p className="text-xs text-green-600">+2% from last month</p>
+              <div className="text-2xl font-bold">{ticketStats.satisfaction}%</div>
+              <p className="text-xs text-green-600">Based on resolved tickets</p>
             </CardContent>
           </Card>
         </div>
@@ -69,7 +72,7 @@ const Analytics = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Ticket Volume</CardTitle>
+              <CardTitle>Weekly Ticket Volume</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -78,8 +81,8 @@ const Analytics = () => {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="open" fill="#3B82F6" />
-                  <Bar dataKey="resolved" fill="#10B981" />
+                  <Bar dataKey="open" fill="#3B82F6" name="Open" />
+                  <Bar dataKey="resolved" fill="#10B981" name="Resolved" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -87,7 +90,7 @@ const Analytics = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>Ticket Status Distribution</CardTitle>
+              <CardTitle>Current Ticket Status Distribution</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>

@@ -5,42 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Mail, Phone } from "lucide-react";
-
-const customers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1 (555) 123-4567",
-    company: "Acme Corp",
-    status: "Active",
-    tickets: 5,
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phone: "+1 (555) 987-6543",
-    company: "TechStart Inc",
-    status: "Active",
-    tickets: 12,
-    joinDate: "2023-11-20",
-  },
-  {
-    id: 3,
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    phone: "+1 (555) 456-7890",
-    company: "Design Co",
-    status: "Inactive",
-    tickets: 3,
-    joinDate: "2024-03-10",
-  },
-];
+import { useData } from "@/contexts/DataContext";
+import AddCustomerModal from "@/components/AddCustomerModal";
 
 const Customers = () => {
+  const { customers } = useData();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const filteredCustomers = customers.filter((customer) =>
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -52,8 +23,11 @@ const Customers = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <Button className="bg-indigo-600 hover:bg-indigo-700">
+          <h1 className="text-2xl font-bold text-gray-900">Customers ({customers.length})</h1>
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => setIsAddModalOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Customer
           </Button>
@@ -106,6 +80,17 @@ const Customers = () => {
             </Card>
           ))}
         </div>
+
+        {filteredCustomers.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No customers found matching your search.</p>
+          </div>
+        )}
+
+        <AddCustomerModal 
+          open={isAddModalOpen} 
+          onOpenChange={setIsAddModalOpen} 
+        />
       </div>
     </div>
   );
