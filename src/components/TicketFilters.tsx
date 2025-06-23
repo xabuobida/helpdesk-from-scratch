@@ -8,6 +8,12 @@ interface TicketFiltersProps {
   onFilterChange: (filter: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  filterCounts?: {
+    unassigned: number;
+    assigned: number;
+    all: number;
+    archive: number;
+  };
 }
 
 export function TicketFilters({
@@ -15,12 +21,13 @@ export function TicketFilters({
   onFilterChange,
   searchQuery,
   onSearchChange,
+  filterCounts = { unassigned: 0, assigned: 0, all: 0, archive: 0 }
 }: TicketFiltersProps) {
   const filters = [
-    { id: "unassigned", label: "Unassigned", count: 5 },
-    { id: "assigned", label: "Assigned to me", count: 8 },
-    { id: "all", label: "All tickets", count: 23 },
-    { id: "archive", label: "Archive", count: 145 },
+    { id: "unassigned", label: "Unassigned", count: filterCounts.unassigned },
+    { id: "assigned", label: "Assigned to me", count: filterCounts.assigned },
+    { id: "all", label: "All tickets", count: filterCounts.all },
+    { id: "archive", label: "Archive", count: filterCounts.archive },
   ];
 
   return (
@@ -41,6 +48,11 @@ export function TicketFilters({
               {filter.id === "unassigned" && filter.count > 0 && (
                 <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
                   {filter.count}
+                </span>
+              )}
+              {filter.id !== "unassigned" && (
+                <span className="ml-2 text-xs text-gray-500">
+                  ({filter.count})
                 </span>
               )}
             </button>
