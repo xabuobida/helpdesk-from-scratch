@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState('customer');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { login, signup } = useAuth();
@@ -23,6 +25,25 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isLogin && !name) {
+      toast({
+        title: "Error",
+        description: "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -30,10 +51,16 @@ const Auth = () => {
       
       if (isLogin) {
         success = await login(email, password);
-        if (!success) {
+        if (success) {
+          toast({
+            title: "Success",
+            description: "Logged in successfully",
+          });
+          navigate('/');
+        } else {
           toast({
             title: "Login Failed",
-            description: "Invalid email or password.",
+            description: "Invalid email or password. Please check your credentials or create an account.",
             variant: "destructive",
           });
         }
@@ -42,25 +69,24 @@ const Auth = () => {
         if (success) {
           toast({
             title: "Account Created",
-            description: "Please check your email to verify your account.",
+            description: "Account created successfully! You can now log in.",
           });
+          // Switch to login mode after successful signup
+          setIsLogin(true);
+          setPassword('');
         } else {
           toast({
             title: "Signup Failed",
-            description: "An account with this email already exists.",
+            description: "An account with this email already exists or there was an error creating your account.",
             variant: "destructive",
           });
         }
-      }
-
-      if (success) {
-        navigate('/');
       }
     } catch (error) {
       console.error('Auth error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -92,7 +118,7 @@ const Auth = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
+                  required={!isLogin}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -112,19 +138,35 @@ const Auth = () => {
             
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter your password"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder={isLogin ? "Enter your password" : "Create a password (min 6 characters)"}
+                  minLength={6}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             
             {!isLogin && (
               <div>
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">Account Type</Label>
                 <Select value={role} onValueChange={setRole}>
                   <SelectTrigger>
                     <SelectValue />
@@ -150,11 +192,15 @@ const Auth = () => {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setPassword('');
+                setName('');
+              }}
               className="text-indigo-600 hover:text-indigo-800 text-sm"
             >
               {isLogin 
-                ? "Don't have an account? Sign up" 
+                ? "Don't have an account? Create one" 
                 : "Already have an account? Sign in"
               }
             </button>
@@ -162,10 +208,10 @@ const Auth = () => {
           
           {isLogin && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
-              <p className="font-medium text-blue-900 mb-2">Demo Accounts:</p>
-              <p className="text-blue-800">Admin: admin@demo.com / password123</p>
-              <p className="text-blue-800">Agent: agent@demo.com / password123</p>
-              <p className="text-blue-800">Customer: customer@demo.com / password123</p>
+              <p className="font-medium text-blue-900 mb-2">To get started:</p>
+              <p className="text-blue-800">1. Click "Create one" above to make a new account</p>
+              <p className="text-blue-800">2. Choose your role (Customer, Agent, or Admin)</p>
+              <p className="text-blue-800">3. Then sign in with your new credentials</p>
             </div>
           )}
         </CardContent>

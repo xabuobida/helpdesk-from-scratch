@@ -38,23 +38,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         
         if (session?.user) {
           // Fetch user profile from our profiles table
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
           
-          if (profile) {
+          console.log('Profile fetch result:', { profile, error });
+          
+          if (profile && !error) {
             setUser({
               id: profile.id,
               email: profile.email,
               name: profile.name,
               role: profile.role as 'admin' | 'agent' | 'customer'
             });
+          } else {
+            console.error('Failed to fetch user profile:', error);
           }
         } else {
           setUser(null);
@@ -78,47 +83,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) {
-      console.error('Login error:', error);
-      setIsLoading(false);
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error('Login error:', error);
+        return false;
+      }
+      
+      console.log('Login successful:', data.user?.id);
+      return true;
+    } catch (error) {
+      console.error('Login exception:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    return true;
   };
 
   const signup = async (email: string, password: string, name: string, role: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name,
-          role
+    try {
+      setIsLoading(true);
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name,
+            role
+          }
         }
+      });
+      
+      if (error) {
+        console.error('Signup error:', error);
+        return false;
       }
-    });
-    
-    if (error) {
-      console.error('Signup error:', error);
-      setIsLoading(false);
+      
+      console.log('Signup successful:', data.user?.id);
+      return true;
+    } catch (error) {
+      console.error('Signup exception:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
-    return true;
   };
 
   const logout = async () => {
