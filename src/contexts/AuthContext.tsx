@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               id: profile.id,
               email: profile.email,
               name: profile.name,
-              role: profile.role
+              role: profile.role as 'admin' | 'agent' | 'customer'
             });
           }
         } else {
