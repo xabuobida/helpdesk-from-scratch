@@ -23,6 +23,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -35,10 +41,28 @@ const Auth = () => {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address (e.g., user@example.com)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!isLogin && !name) {
       toast({
         title: "Error",
         description: "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isLogin && password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
         variant: "destructive",
       });
       return;
@@ -60,7 +84,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Login Failed",
-            description: "Invalid email or password. Please check your credentials or create an account.",
+            description: "Invalid email or password. Please check your credentials.",
             variant: "destructive",
           });
         }
@@ -71,13 +95,12 @@ const Auth = () => {
             title: "Account Created",
             description: "Account created successfully! You can now log in.",
           });
-          // Switch to login mode after successful signup
           setIsLogin(true);
           setPassword('');
         } else {
           toast({
             title: "Signup Failed",
-            description: "An account with this email already exists or there was an error creating your account.",
+            description: "Unable to create account. Please try a different email address or check if the email is valid.",
             variant: "destructive",
           });
         }
@@ -132,7 +155,7 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your email"
+                placeholder="Enter a valid email (e.g., user@example.com)"
               />
             </div>
             
@@ -210,8 +233,9 @@ const Auth = () => {
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
               <p className="font-medium text-blue-900 mb-2">To get started:</p>
               <p className="text-blue-800">1. Click "Create one" above to make a new account</p>
-              <p className="text-blue-800">2. Choose your role (Customer, Agent, or Admin)</p>
-              <p className="text-blue-800">3. Then sign in with your new credentials</p>
+              <p className="text-blue-800">2. Use a valid email (e.g., test@example.com)</p>
+              <p className="text-blue-800">3. Choose your role (Customer, Agent, or Admin)</p>
+              <p className="text-blue-800">4. Then sign in with your new credentials</p>
             </div>
           )}
         </CardContent>
