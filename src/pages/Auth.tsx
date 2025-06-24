@@ -71,36 +71,51 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      let success = false;
+      let result = null;
       
       if (isLogin) {
-        success = await login(email, password);
-        if (success) {
+        result = await login(email, password);
+        if (result.success) {
           toast({
             title: "Success",
             description: "Logged in successfully",
           });
           navigate('/');
         } else {
-          toast({
-            title: "Login Failed",
-            description: "Invalid email or password. Please check your credentials.",
-            variant: "destructive",
-          });
+          // Handle specific login errors
+          if (result.error?.code === 'email_not_confirmed') {
+            toast({
+              title: "Email Not Confirmed",
+              description: "Please check your email and click the confirmation link before logging in.",
+              variant: "destructive",
+            });
+          } else if (result.error?.code === 'invalid_credentials') {
+            toast({
+              title: "Invalid Credentials",
+              description: "Invalid email or password. Please check your credentials.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Login Failed",
+              description: result.error?.message || "Unable to log in. Please try again.",
+              variant: "destructive",
+            });
+          }
         }
       } else {
-        success = await signup(email, password, name, role);
-        if (success) {
+        result = await signup(email, password, name, role);
+        if (result.success) {
           toast({
             title: "Account Created",
-            description: "Account created successfully! You can now log in.",
+            description: "Account created successfully! Please check your email for a confirmation link.",
           });
           setIsLogin(true);
           setPassword('');
         } else {
           toast({
             title: "Signup Failed",
-            description: "Unable to create account. Please try a different email address or check if the email is valid.",
+            description: result.error?.message || "Unable to create account. Please try again.",
             variant: "destructive",
           });
         }
@@ -235,7 +250,8 @@ const Auth = () => {
               <p className="text-blue-800">1. Click "Create one" above to make a new account</p>
               <p className="text-blue-800">2. Use a valid email (e.g., test@example.com)</p>
               <p className="text-blue-800">3. Choose your role (Customer, Agent, or Admin)</p>
-              <p className="text-blue-800">4. Then sign in with your new credentials</p>
+              <p className="text-blue-800">4. Check your email for confirmation link</p>
+              <p className="text-blue-800">5. Then sign in with your new credentials</p>
             </div>
           )}
         </CardContent>

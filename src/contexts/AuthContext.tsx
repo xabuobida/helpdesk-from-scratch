@@ -10,11 +10,19 @@ interface UserProfile {
   role: 'admin' | 'agent' | 'customer';
 }
 
+interface AuthResult {
+  success: boolean;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}
+
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, name: string, role: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  signup: (email: string, password: string, name: string, role: string) => Promise<AuthResult>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -82,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       setIsLoading(true);
       
@@ -93,20 +101,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Login error:', error);
-        return false;
+        return {
+          success: false,
+          error: {
+            code: error.message === 'Email not confirmed' ? 'email_not_confirmed' : error.name?.toLowerCase(),
+            message: error.message
+          }
+        };
       }
       
       console.log('Login successful:', data.user?.id);
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Login exception:', error);
-      return false;
+      return {
+        success: false,
+        error: {
+          message: 'An unexpected error occurred'
+        }
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: string): Promise<boolean> => {
+  const signup = async (email: string, password: string, name: string, role: string): Promise<AuthResult> => {
     try {
       setIsLoading(true);
       
@@ -126,14 +145,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Signup error:', error);
-        return false;
+        return {
+          success: false,
+          error: {
+            code: error.name?.toLowerCase(),
+            message: error.message
+          }
+        };
       }
       
       console.log('Signup successful:', data.user?.id);
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Signup exception:', error);
-      return false;
+      return {
+        success: false,
+        error: {
+          message: 'An unexpected error occurred'
+        }
+      };
     } finally {
       setIsLoading(false);
     }
