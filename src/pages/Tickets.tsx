@@ -99,8 +99,13 @@ const Tickets = () => {
     }
   };
 
-  // Fetch profiles for customer selection
+  // Fetch profiles for customer selection (for admin/agent) or support agents (for auto-assignment)
   const fetchProfiles = async () => {
+    if (user?.role === 'customer') {
+      // For customers, we don't need to fetch customer profiles since they create for themselves
+      return;
+    }
+    
     const { data } = await supabase
       .from('profiles')
       .select('id, name, email')
@@ -109,6 +114,17 @@ const Tickets = () => {
     if (data) {
       setProfiles(data);
     }
+  };
+
+  // Get available support agents for auto-assignment
+  const getAvailableAgent = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('role', ['agent', 'admin'])
+      .limit(1);
+    
+    return data?.[0]?.id || null;
   };
 
   useEffect(() => {
@@ -132,15 +148,24 @@ const Tickets = () => {
 
   const handleCreateTicket = async (ticketData: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Find customer profile by email
-      const customer = profiles.find(p => p.email === ticketData.customerEmail);
-      if (!customer) {
-        toast({
-          title: "Error",
-          description: "Customer not found.",
-          variant: "destructive",
-        });
-        return;
+      let customerId = user?.id;
+      let assignedAgentId = null;
+
+      // If user is customer, they create ticket for themselves and auto-assign to agent
+      if (user?.role === 'customer') {
+        assignedAgentId = await getAvailableAgent();
+      } else {
+        // If admin/agent creates ticket, find customer by email
+        const customer = profiles.find(p => p.email === ticketData.customerEmail);
+        if (!customer) {
+          toast({
+            title: "Error",
+            description: "Customer not found.",
+            variant: "destructive",
+          });
+          return;
+        }
+        customerId = customer.id;
       }
 
       const { error } = await supabase
@@ -148,11 +173,11 @@ const Tickets = () => {
         .insert({
           title: ticketData.title,
           description: ticketData.description,
-          status: ticketData.status,
+          status: assignedAgentId ? 'assigned' : 'unassigned',
           priority: ticketData.priority,
           category: ticketData.category,
-          customer_id: customer.id,
-          assigned_to: null // Will be set when assigning
+          customer_id: customerId,
+          assigned_to: assignedAgentId
         });
 
       if (error) {
@@ -167,7 +192,9 @@ const Tickets = () => {
 
       toast({
         title: "Success",
-        description: "Ticket created successfully.",
+        description: user?.role === 'customer' 
+          ? "Ticket created successfully and assigned to support agent."
+          : "Ticket created successfully.",
       });
 
       setShowCreateModal(false);
@@ -241,15 +268,13 @@ const Tickets = () => {
               <h1 className="text-2xl font-bold text-gray-900">
                 {user?.role === 'customer' ? 'My Tickets' : 'Tickets'}
               </h1>
-              {(user?.role === 'admin' || user?.role === 'agent') && (
-                <Button 
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New ticket
-                </Button>
-              )}
+              <Button 
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {user?.role === 'customer' ? 'Create ticket' : 'New ticket'}
+              </Button>
             </div>
             
             <TicketFilters
@@ -274,14 +299,12 @@ const Tickets = () => {
         </div>
       </div>
 
-      {(user?.role === 'admin' || user?.role === 'agent') && (
-        <CreateTicketModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateTicket}
-          customers={profiles}
-        />
-      )}
+      <CreateTicketModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateTicket}
+        customers={profiles}
+      />
 
       {selectedTicket && (
         <TicketDetailModal
