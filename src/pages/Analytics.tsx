@@ -1,7 +1,6 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useData } from "@/contexts/DataContext";
 
 const ticketData = [
@@ -15,32 +14,13 @@ const ticketData = [
 ];
 
 const Analytics = () => {
-  const { ticketStats, customers, isLoading } = useData();
+  const { ticketStats, customers } = useData();
 
   const statusData = [
     { name: "Open", value: ticketStats.open, color: "#3B82F6" },
     { name: "In Progress", value: ticketStats.inProgress, color: "#F59E0B" },
     { name: "Resolved", value: ticketStats.resolved, color: "#10B981" },
   ];
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Skeleton className="h-80 w-full" />
-            <Skeleton className="h-80 w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
