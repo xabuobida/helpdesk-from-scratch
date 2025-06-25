@@ -6,6 +6,7 @@ import { TicketFilters } from "@/components/TicketFilters";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { CreateTicketModal } from "@/components/CreateTicketModal";
 import { TicketDetailModal } from "@/components/TicketDetailModal";
+import { Skeleton } from "@/components/ui/skeleton";
 import { mockActivities } from "@/data/mockData";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,11 +44,13 @@ const Tickets = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [profiles, setProfiles] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
 
   // Fetch tickets based on user role
   const fetchTickets = async () => {
     if (!user) return;
 
+    setTicketsLoading(true);
     try {
       let query = supabase
         .from('tickets')
@@ -60,10 +63,8 @@ const Tickets = () => {
 
       // Filter tickets based on user role
       if (user.role === 'customer') {
-        // Customers can only see their own tickets
         query = query.eq('customer_id', user.id);
       }
-      // Admin and agent can see all tickets (no additional filter needed)
 
       const { data, error } = await query;
 
@@ -95,14 +96,14 @@ const Tickets = () => {
     } catch (error) {
       console.error('Error:', error);
     } finally {
+      setTicketsLoading(false);
       setLoading(false);
     }
   };
 
-  // Fetch profiles for customer selection (for admin/agent) or support agents (for auto-assignment)
+  // Fetch profiles for customer selection (for admin/agent)
   const fetchProfiles = async () => {
     if (user?.role === 'customer') {
-      // For customers, we don't need to fetch customer profiles since they create for themselves
       return;
     }
     
@@ -128,8 +129,10 @@ const Tickets = () => {
   };
 
   useEffect(() => {
-    fetchTickets();
-    fetchProfiles();
+    if (user) {
+      fetchTickets();
+      fetchProfiles();
+    }
   }, [user]);
 
   const filteredTickets = tickets.filter((ticket) => {
@@ -151,11 +154,9 @@ const Tickets = () => {
       let customerId = user?.id;
       let assignedAgentId = null;
 
-      // If user is customer, they create ticket for themselves and auto-assign to agent
       if (user?.role === 'customer') {
         assignedAgentId = await getAvailableAgent();
       } else {
-        // If admin/agent creates ticket, find customer by email
         const customer = profiles.find(p => p.email === ticketData.customerEmail);
         if (!customer) {
           toast({
@@ -198,7 +199,7 @@ const Tickets = () => {
       });
 
       setShowCreateModal(false);
-      fetchTickets(); // Refresh tickets
+      fetchTickets();
     } catch (error) {
       console.error('Error:', error);
     }
@@ -233,7 +234,7 @@ const Tickets = () => {
       });
 
       setSelectedTicket(updatedTicket);
-      fetchTickets(); // Refresh tickets
+      fetchTickets();
     } catch (error) {
       console.error('Error:', error);
     }
@@ -248,12 +249,18 @@ const Tickets = () => {
     };
   };
 
-  if (loading) {
+  // Show skeleton loading only on initial load
+  if (loading && !user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading tickets...</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <Skeleton className="h-12 w-full mb-4" />
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
         </div>
       </div>
     );
@@ -286,10 +293,18 @@ const Tickets = () => {
             />
             
             <div className="mt-6">
-              <TicketList 
-                tickets={filteredTickets}
-                onTicketClick={handleTicketClick}
-              />
+              {ticketsLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              ) : (
+                <TicketList 
+                  tickets={filteredTickets}
+                  onTicketClick={handleTicketClick}
+                />
+              )}
             </div>
           </div>
         </div>

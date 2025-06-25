@@ -4,11 +4,34 @@ import { Navigate } from 'react-router-dom';
 import { useData } from '@/contexts/DataContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TicketIcon, Users, Clock, CheckCircle } from 'lucide-react';
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { ticketStats } = useData();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <Skeleton className="h-9 w-64 mb-2" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/auth" replace />;

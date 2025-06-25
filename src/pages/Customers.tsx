@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, Mail, Phone } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import AddCustomerModal from "@/components/AddCustomerModal";
 
 const Customers = () => {
-  const { customers } = useData();
+  const { customers, isLoading } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -18,6 +19,25 @@ const Customers = () => {
     customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.company.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <Skeleton className="h-10 w-80 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-48 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -81,7 +101,7 @@ const Customers = () => {
           ))}
         </div>
 
-        {filteredCustomers.length === 0 && (
+        {filteredCustomers.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <p className="text-gray-500">No customers found matching your search.</p>
           </div>
