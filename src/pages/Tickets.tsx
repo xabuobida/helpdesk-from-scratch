@@ -58,6 +58,13 @@ const Tickets = () => {
         `)
         .order('created_at', { ascending: false });
 
+      // Filter tickets based on user role
+      if (user.role === 'customer') {
+        // Customers can only see their own tickets
+        query = query.eq('customer_id', user.id);
+      }
+      // Admin and agent can see all tickets (no additional filter needed)
+
       const { data, error } = await query;
 
       if (error) {

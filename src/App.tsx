@@ -14,8 +14,6 @@ import Chat from "./pages/Chat";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import Auth from "./pages/Auth";
 import Logout from "./pages/Logout";
 import NotFound from "./pages/NotFound";
@@ -31,8 +29,6 @@ const App = () => (
         <DataProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/*" element={
                 <ProtectedRoute>
