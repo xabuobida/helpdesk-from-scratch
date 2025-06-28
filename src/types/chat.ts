@@ -1,22 +1,31 @@
 
 export interface Message {
   id: string;
-  sender: string;
+  sender_id: string;
   message: string;
-  time: string;
-  isFromCustomer: boolean;
-  timestamp: Date;
+  created_at: string;
+  sender?: {
+    name: string;
+    role: string;
+  };
 }
 
 export interface ChatRoom {
   id: string;
-  customerName: string;
-  customerId: string;
-  agentId?: string;
-  agentName?: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
+  customer_id: string;
+  agent_id?: string;
   status: 'active' | 'waiting' | 'closed';
-  messages: Message[];
+  created_at: string;
+  updated_at: string;
+  customer?: {
+    name: string;
+    email: string;
+  };
+  agent?: {
+    name: string;
+    email: string;
+  };
+  messages?: Message[];
+  lastMessage?: string;
+  unreadCount?: number;
 }

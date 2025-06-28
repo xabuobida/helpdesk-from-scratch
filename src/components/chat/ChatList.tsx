@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import { ChatRoom } from "@/types/chat";
-import { getStatusColor, getStatusText } from "@/utils/chatUtils";
 
 interface ChatListProps {
   chatRooms: ChatRoom[];
@@ -22,10 +21,42 @@ export const ChatList = ({
   onChatSelect, 
   userRole 
 }: ChatListProps) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'waiting': return 'bg-yellow-500';
+      case 'closed': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active': return 'Active';
+      case 'waiting': return 'Waiting';
+      case 'closed': return 'Closed';
+      default: return 'Unknown';
+    }
+  };
+
   const filteredChatRooms = chatRooms.filter(room =>
-    room.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    room.customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    room.customer?.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
 
   return (
     <div className="w-80 bg-white border-r border-gray-200">
@@ -58,24 +89,35 @@ export const ChatList = ({
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center space-x-2">
                 <h3 className="font-medium text-gray-900">
-                  {userRole === 'customer' ? (room.agentName || 'Support Agent') : room.customerName}
+                  {userRole === 'customer' 
+                    ? (room.agent?.name || 'Support Agent') 
+                    : (room.customer?.name || 'Customer')
+                  }
                 </h3>
                 <Badge className={`${getStatusColor(room.status)} text-white text-xs`}>
                   {getStatusText(room.status)}
                 </Badge>
               </div>
-              <span className="text-xs text-gray-500">{room.time}</span>
+              <span className="text-xs text-gray-500">{formatTime(room.updated_at)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600 truncate max-w-[200px]">{room.lastMessage}</p>
-              {room.unread > 0 && (
+              <p className="text-sm text-gray-600 truncate max-w-[200px]">
+                {room.lastMessage || 'No messages yet'}
+              </p>
+              {room.unreadCount && room.unreadCount > 0 && (
                 <span className="bg-indigo-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                  {room.unread}
+                  {room.unreadCount}
                 </span>
               )}
             </div>
           </div>
         ))}
+        
+        {filteredChatRooms.length === 0 && (
+          <div className="p-4 text-center text-gray-500">
+            <p>No conversations found</p>
+          </div>
+        )}
       </div>
     </div>
   );

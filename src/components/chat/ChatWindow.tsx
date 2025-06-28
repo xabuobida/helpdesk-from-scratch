@@ -1,31 +1,52 @@
 
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChatRoom } from "@/types/chat";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
-import { getStatusColor, getStatusText } from "@/utils/chatUtils";
+import { ChatRoom, Message } from "@/types/chat";
 
 interface ChatWindowProps {
   selectedChat: ChatRoom;
+  messages: Message[];
   userRole: string;
   newMessage: string;
   setNewMessage: (message: string) => void;
   onSendMessage: () => void;
+  currentUser: any;
 }
 
 export const ChatWindow = ({ 
   selectedChat, 
+  messages,
   userRole, 
   newMessage, 
   setNewMessage, 
-  onSendMessage 
+  onSendMessage,
+  currentUser
 }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedChat.messages]);
+  }, [messages]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'waiting': return 'bg-yellow-500';
+      case 'closed': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active': return 'Active';
+      case 'waiting': return 'Waiting';
+      case 'closed': return 'Closed';
+      default: return 'Unknown';
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -35,14 +56,14 @@ export const ChatWindow = ({
           <div>
             <h3 className="font-semibold text-gray-900">
               {userRole === 'customer' 
-                ? `Chat with ${selectedChat.agentName || 'Support Agent'}`
-                : `Chat with ${selectedChat.customerName}`
+                ? `Chat with ${selectedChat.agent?.name || 'Support Agent'}`
+                : `Chat with ${selectedChat.customer?.name || 'Customer'}`
               }
             </h3>
             <p className="text-sm text-gray-500">
               {userRole === 'customer' 
-                ? `Customer ID: ${selectedChat.customerId}`
-                : `Customer: ${selectedChat.customerName} • ID: ${selectedChat.customerId}`
+                ? `Customer ID: ${selectedChat.customer_id}`
+                : `Customer: ${selectedChat.customer?.name} • ID: ${selectedChat.customer_id}`
               } • Status: {getStatusText(selectedChat.status)}
             </p>
           </div>
@@ -54,15 +75,23 @@ export const ChatWindow = ({
       
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {selectedChat.messages.map((message) => {
-          const isOwnMessage = userRole === 'customer' 
-            ? message.isFromCustomer 
-            : !message.isFromCustomer;
+        {messages.map((message) => {
+          const isOwnMessage = message.sender_id === currentUser?.id;
           
           return (
             <MessageBubble
               key={message.id}
-              message={message}
+              message={{
+                id: message.id,
+                sender: message.sender?.name || 'Unknown',
+                message: message.message,
+                time: new Date(message.created_at).toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }),
+                isFromCustomer: message.sender?.role === 'customer',
+                timestamp: new Date(message.created_at)
+              }}
               isOwnMessage={isOwnMessage}
             />
           );
