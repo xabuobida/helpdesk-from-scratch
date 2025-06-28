@@ -76,11 +76,11 @@ const Chat = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500">
               <h3 className="text-lg font-medium mb-2">
-                {user?.role === 'customer' ? 'Loading chat...' : 'No conversation selected'}
+                {user?.role === 'customer' ? 'Starting your chat...' : 'No conversation selected'}
               </h3>
               <p>
                 {user?.role === 'customer' 
-                  ? 'Please wait while we connect you with support'
+                  ? 'We\'re setting up your support chat. Please wait a moment.'
                   : 'Choose a conversation from the list to start chatting'
                 }
               </p>

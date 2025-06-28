@@ -39,10 +39,17 @@ export const ChatList = ({
     }
   };
 
-  const filteredChatRooms = chatRooms.filter(room =>
-    room.customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.customer?.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredChatRooms = chatRooms.filter(room => {
+    if (!searchQuery) return true;
+    const customerName = room.customer?.name?.toLowerCase() || '';
+    const customerEmail = room.customer?.email?.toLowerCase() || '';
+    const agentName = room.agent?.name?.toLowerCase() || '';
+    const query = searchQuery.toLowerCase();
+    
+    return customerName.includes(query) || 
+           customerEmail.includes(query) || 
+           agentName.includes(query);
+  });
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -115,7 +122,7 @@ export const ChatList = ({
         
         {filteredChatRooms.length === 0 && (
           <div className="p-4 text-center text-gray-500">
-            <p>No conversations found</p>
+            <p>{searchQuery ? 'No conversations match your search' : 'No conversations found'}</p>
           </div>
         )}
       </div>

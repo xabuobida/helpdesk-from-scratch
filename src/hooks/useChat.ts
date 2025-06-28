@@ -95,7 +95,7 @@ export const useChat = () => {
         .from('chat_rooms')
         .select('*')
         .eq('customer_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error checking for existing chat room:', fetchError);
@@ -252,7 +252,7 @@ export const useChat = () => {
     }
   }, [user]);
 
-  // Auto-create chat room for customers
+  // Auto-create chat room for customers and auto-select it
   useEffect(() => {
     if (user?.role === 'customer' && chatRooms.length === 0 && !loading) {
       getOrCreateChatRoom().then((room) => {
@@ -260,8 +260,11 @@ export const useChat = () => {
           fetchChatRooms();
         }
       });
+    } else if (user?.role === 'customer' && chatRooms.length === 1 && !selectedChat) {
+      // Auto-select the single chat room for customers
+      setSelectedChat(chatRooms[0]);
     }
-  }, [user, chatRooms.length, loading]);
+  }, [user, chatRooms.length, loading, selectedChat]);
 
   // Fetch messages when selected chat changes
   useEffect(() => {
