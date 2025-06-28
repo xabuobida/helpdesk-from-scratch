@@ -7,6 +7,13 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message, isOwnMessage }: MessageBubbleProps) => {
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
   return (
     <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div
@@ -20,7 +27,7 @@ export const MessageBubble = ({ message, isOwnMessage }: MessageBubbleProps) => 
           <span className={`text-xs font-medium ${
             isOwnMessage ? "text-indigo-100" : "text-gray-600"
           }`}>
-            {message.sender}
+            {message.sender?.name || 'Unknown'}
           </span>
         </div>
         <p className="text-sm">{message.message}</p>
@@ -29,7 +36,7 @@ export const MessageBubble = ({ message, isOwnMessage }: MessageBubbleProps) => 
             isOwnMessage ? "text-indigo-100" : "text-gray-500"
           }`}
         >
-          {message.time}
+          {formatTime(message.created_at)}
         </p>
       </div>
     </div>

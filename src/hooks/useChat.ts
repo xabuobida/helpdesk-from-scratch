@@ -42,7 +42,19 @@ export const useChat = () => {
         return;
       }
 
-      setChatRooms(data || []);
+      // Transform the data to match our ChatRoom interface
+      const transformedData: ChatRoom[] = (data || []).map(room => ({
+        id: room.id,
+        customer_id: room.customer_id,
+        agent_id: room.agent_id,
+        status: room.status as 'active' | 'waiting' | 'closed',
+        created_at: room.created_at,
+        updated_at: room.updated_at,
+        customer: room.customer,
+        agent: room.agent
+      }));
+
+      setChatRooms(transformedData);
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
     } finally {
@@ -214,7 +226,7 @@ export const useChat = () => {
           table: 'chat_messages'
         },
         (payload) => {
-          const newMessage = payload.new as Message;
+          const newMessage = payload.new as any;
           
           // If message is for the currently selected chat, add it to messages
           if (selectedChat && newMessage.chat_room_id === selectedChat.id) {
