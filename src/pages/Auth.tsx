@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Info } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -91,7 +91,7 @@ const Auth = () => {
           } else if (result.error?.code === 'invalid_credentials') {
             toast({
               title: "Invalid Credentials",
-              description: "Invalid email or password. Please check your credentials.",
+              description: "Account not found. Please check your email and password, or create a new account.",
               variant: "destructive",
             });
           } else {
@@ -128,6 +128,15 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fillTestCredentials = (testRole: string) => {
+    setEmail(`${testRole}@test.com`);
+    setPassword('password123');
+    if (!isLogin) {
+      setName(`Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`);
+      setRole(testRole);
     }
   };
 
@@ -233,6 +242,7 @@ const Auth = () => {
                 setIsLogin(!isLogin);
                 setPassword('');
                 setName('');
+                setEmail('');
               }}
               className="text-indigo-600 hover:text-indigo-800 text-sm"
             >
@@ -243,17 +253,80 @@ const Auth = () => {
             </button>
           </div>
           
-          {isLogin && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
-              <p className="font-medium text-blue-900 mb-2">Quick Test Accounts:</p>
-              <div className="space-y-1 text-blue-800">
-                <p><strong>Admin:</strong> admin@test.com / password123</p>
-                <p><strong>Agent:</strong> agent@test.com / password123</p>
-                <p><strong>Customer:</strong> customer@test.com / password123</p>
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-900 mb-2">
+                  {isLogin ? 'First time here?' : 'Quick Setup'}
+                </p>
+                {isLogin ? (
+                  <div className="text-blue-800">
+                    <p className="mb-2">Create test accounts to explore different user roles:</p>
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLogin(false);
+                          fillTestCredentials('admin');
+                        }}
+                        className="block text-left hover:underline"
+                      >
+                        • Create Admin Account
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLogin(false);
+                          fillTestCredentials('agent');
+                        }}
+                        className="block text-left hover:underline"
+                      >
+                        • Create Agent Account
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLogin(false);
+                          fillTestCredentials('customer');
+                        }}
+                        className="block text-left hover:underline"
+                      >
+                        • Create Customer Account
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-blue-800">
+                    <p className="mb-2">Fill test credentials for quick setup:</p>
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => fillTestCredentials('admin')}
+                        className="block text-left hover:underline"
+                      >
+                        • Admin: admin@test.com
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillTestCredentials('agent')}
+                        className="block text-left hover:underline"
+                      >
+                        • Agent: agent@test.com
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillTestCredentials('customer')}
+                        className="block text-left hover:underline"
+                      >
+                        • Customer: customer@test.com
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="mt-2 text-blue-700">Or create a new account above</p>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
