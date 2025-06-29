@@ -41,6 +41,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const createProfileIfNotExists = async (authUser: User) => {
+    try {
+      // First, try to get existing profile
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (existingProfile && !fetchError) {
+        // Profile exists, return it
+        return existingProfile;
+      }
+
+      // Profile doesn't exist, create it
+      console.log('Creating profile for user:', authUser.id);
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUser.id,
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+          role: authUser.user_metadata?.role || 'customer'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        return null;
+      }
+
+      return newProfile;
+    } catch (error) {
+      console.error('Error in createProfileIfNotExists:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -49,16 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile from our profiles table
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Get or create user profile
+          const profile = await createProfileIfNotExists(session.user);
           
-          console.log('Profile fetch result:', { profile, error });
-          
-          if (profile && !error) {
+          if (profile) {
             setUser({
               id: profile.id,
               email: profile.email,
@@ -66,37 +99,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: profile.role as 'admin' | 'agent' | 'customer'
             });
           } else {
-            console.error('Failed to fetch user profile:', error);
-            // If profile doesn't exist, try to create it from auth user data
-            if (error?.code === 'PGRST116') {
-              console.log('Profile not found, creating from auth user data...');
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: session.user.user_metadata?.name || session.user.email || 'User',
-                  role: session.user.user_metadata?.role || 'customer'
-                });
-              
-              if (!insertError) {
-                // Retry fetching the profile
-                const { data: newProfile } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', session.user.id)
-                  .single();
-                
-                if (newProfile) {
-                  setUser({
-                    id: newProfile.id,
-                    email: newProfile.email,
-                    name: newProfile.name,
-                    role: newProfile.role as 'admin' | 'agent' | 'customer'
-                  });
-                }
-              }
-            }
+            console.error('Failed to get or create user profile');
+            // Don't set user to null here, as it might cause redirect loops
+            // Instead, create a basic user object from auth data
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              role: (session.user.user_metadata?.role as 'admin' | 'agent' | 'customer') || 'customer'
+            });
           }
         } else {
           setUser(null);
@@ -133,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           success: false,
           error: {
-            code: error.message === 'Email not confirmed' ? 'email_not_confirmed' : error.name?.toLowerCase(),
+            code: error.message === 'Email not confirmed' ? 'email_not_confirmed' : 'invalid_credentials',
             message: error.message
           }
         };

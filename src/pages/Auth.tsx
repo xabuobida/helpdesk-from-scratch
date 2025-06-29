@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -108,7 +107,7 @@ const Auth = () => {
         if (result.success) {
           toast({
             title: "Account Created",
-            description: "Account created successfully! Please check your email for a confirmation link.",
+            description: "Account created successfully! You can now sign in.",
           });
           setIsLogin(true);
           setPassword('');
@@ -246,12 +245,13 @@ const Auth = () => {
           
           {isLogin && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
-              <p className="font-medium text-blue-900 mb-2">To get started:</p>
-              <p className="text-blue-800">1. Click "Create one" above to make a new account</p>
-              <p className="text-blue-800">2. Use a valid email (e.g., test@example.com)</p>
-              <p className="text-blue-800">3. Choose your role (Customer, Agent, or Admin)</p>
-              <p className="text-blue-800">4. Check your email for confirmation link</p>
-              <p className="text-blue-800">5. Then sign in with your new credentials</p>
+              <p className="font-medium text-blue-900 mb-2">Quick Test Accounts:</p>
+              <div className="space-y-1 text-blue-800">
+                <p><strong>Admin:</strong> admin@test.com / password123</p>
+                <p><strong>Agent:</strong> agent@test.com / password123</p>
+                <p><strong>Customer:</strong> customer@test.com / password123</p>
+              </div>
+              <p className="mt-2 text-blue-700">Or create a new account above</p>
             </div>
           )}
         </CardContent>
