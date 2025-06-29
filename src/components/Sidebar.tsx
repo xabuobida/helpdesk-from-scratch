@@ -1,5 +1,4 @@
-
-import { Calendar, Home, Inbox, Search, Settings, TicketIcon, Users, BarChart3, MessageSquare } from "lucide-react";
+import { Calendar, Home, Inbox, Search, Settings, TicketIcon, Users, BarChart3, MessageSquare, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +29,11 @@ const adminSidebarItems = [
     title: "Customers",
     url: "/customers",
     icon: Users,
+  },
+  {
+    title: "Admin Panel",
+    url: "/admin",
+    icon: Shield,
   },
   {
     title: "Settings",
