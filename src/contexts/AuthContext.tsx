@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -68,6 +67,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           } else {
             console.error('Failed to fetch user profile:', error);
+            // If profile doesn't exist, try to create it from auth user data
+            if (error?.code === 'PGRST116') {
+              console.log('Profile not found, creating from auth user data...');
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: session.user.user_metadata?.name || session.user.email || 'User',
+                  role: session.user.user_metadata?.role || 'customer'
+                });
+              
+              if (!insertError) {
+                // Retry fetching the profile
+                const { data: newProfile } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
+                
+                if (newProfile) {
+                  setUser({
+                    id: newProfile.id,
+                    email: newProfile.email,
+                    name: newProfile.name,
+                    role: newProfile.role as 'admin' | 'agent' | 'customer'
+                  });
+                }
+              }
+            }
           }
         } else {
           setUser(null);
@@ -129,13 +158,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             name,
             role
