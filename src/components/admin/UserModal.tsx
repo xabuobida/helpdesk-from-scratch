@@ -17,7 +17,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'agent' | 'customer';
+  role: string; // Changed from union type to string
   created_at: string;
 }
 
@@ -39,7 +39,7 @@ const UserModal: React.FC<UserModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'customer' as 'admin' | 'agent' | 'customer',
+    role: 'customer',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -134,7 +134,7 @@ const UserModal: React.FC<UserModalProps> = ({
             <Label htmlFor="role">Role</Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value: 'admin' | 'agent' | 'customer') => 
+              onValueChange={(value: string) => 
                 setFormData({ ...formData, role: value })
               }
             >

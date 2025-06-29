@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,12 +13,15 @@ import { useToast } from '@/hooks/use-toast';
 import UserModal from '@/components/admin/UserModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import BulkDeleteModal from '@/components/admin/BulkDeleteModal';
+import { Database } from '@/integrations/supabase/types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'agent' | 'customer';
+  role: string; // Changed from union type to string to match database
   created_at: string;
 }
 
@@ -50,7 +52,17 @@ const AdminDashboard = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Transform the data to match our User interface
+      const transformedUsers: User[] = (data || []).map((profile: Profile) => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        created_at: profile.created_at || new Date().toISOString()
+      }));
+      
+      setUsers(transformedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({

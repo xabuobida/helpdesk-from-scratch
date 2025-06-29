@@ -15,7 +15,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'agent' | 'customer';
+  role: string; // Changed from union type to string
   created_at: string;
 }
 
