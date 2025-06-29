@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,11 +10,13 @@ import AdminStatsCards from '@/components/admin/AdminStatsCards';
 import AdminControls from '@/components/admin/AdminControls';
 import UsersTable from '@/components/admin/UsersTable';
 import { useAdminUsers, User } from '@/hooks/useAdminUsers';
+import { useAdminUtils } from '@/hooks/useAdminUtils';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { users, loading, createUser, updateUser, deleteUser, bulkDeleteUsers } = useAdminUsers();
+  const { createActivity } = useAdminUtils();
   
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,10 +53,18 @@ const AdminDashboard = () => {
   // Handle user creation/update
   const handleUserSave = async (userData: Omit<User, 'id' | 'created_at'>) => {
     try {
+      let success = false;
+      
       if (userModal.mode === 'create') {
-        await createUser(userData);
+        success = await createUser(userData);
+        if (success) {
+          await createActivity(`Admin created new user: ${userData.name} (${userData.role})`);
+        }
       } else if (userModal.user) {
-        await updateUser(userModal.user.id, userData);
+        success = await updateUser(userModal.user.id, userData);
+        if (success) {
+          await createActivity(`Admin updated user: ${userData.name}`);
+        }
       }
     } catch (error) {
       console.error('Error saving user:', error);
@@ -64,13 +75,25 @@ const AdminDashboard = () => {
 
   // Handle user deletion
   const handleDeleteUser = async (userId: string) => {
-    await deleteUser(userId);
+    const userToDelete = users.find(u => u.id === userId);
+    const success = await deleteUser(userId);
+    
+    if (success && userToDelete) {
+      await createActivity(`Admin deleted user: ${userToDelete.name}`);
+    }
+    
     setDeleteModal({ open: false });
   };
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
-    await bulkDeleteUsers(selectedUsers);
+    const usersToDelete = users.filter(u => selectedUsers.includes(u.id));
+    const success = await bulkDeleteUsers(selectedUsers);
+    
+    if (success) {
+      await createActivity(`Admin bulk deleted ${selectedUsers.length} users`);
+    }
+    
     setSelectedUsers([]);
     setBulkDeleteModal(false);
   };
@@ -112,7 +135,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage all users across your helpdesk system</p>
+          <p className="text-gray-600">Full administrative control over your helpdesk system</p>
         </div>
 
         {/* Stats Cards */}
