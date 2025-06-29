@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -19,7 +18,7 @@ interface UserModalProps {
   onOpenChange: (open: boolean) => void;
   user?: User;
   mode: 'create' | 'edit';
-  onSave: (userData: Omit<User, 'id' | 'created_at'>) => void;
+  onSave: (userData: Omit<User, 'id' | 'created_at'> & { password?: string }) => void;
 }
 
 const UserModal: React.FC<UserModalProps> = ({
@@ -33,6 +32,7 @@ const UserModal: React.FC<UserModalProps> = ({
     name: '',
     email: '',
     role: 'customer',
+    password: '',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -42,12 +42,14 @@ const UserModal: React.FC<UserModalProps> = ({
         name: user.name,
         email: user.email,
         role: user.role,
+        password: '',
       });
     } else {
       setFormData({
         name: '',
         email: '',
         role: 'customer',
+        password: '',
       });
     }
     setErrors({});
@@ -70,6 +72,15 @@ const UserModal: React.FC<UserModalProps> = ({
       newErrors.role = 'Role is required';
     }
 
+    // Password is only required when creating a new user
+    if (mode === 'create') {
+      if (!formData.password.trim()) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters long';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,7 +89,13 @@ const UserModal: React.FC<UserModalProps> = ({
     e.preventDefault();
     
     if (validateForm()) {
-      onSave(formData);
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        ...(mode === 'create' && { password: formData.password }),
+      };
+      onSave(userData);
     }
   };
 
@@ -122,6 +139,21 @@ const UserModal: React.FC<UserModalProps> = ({
             />
             {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
           </div>
+
+          {mode === 'create' && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Enter password (min. 6 characters)"
+                className={errors.password ? 'border-red-500' : ''}
+              />
+              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>

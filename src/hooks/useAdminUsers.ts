@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,26 +48,47 @@ export const useAdminUsers = () => {
     }
   };
 
-  const createUser = async (userData: Omit<User, 'id' | 'created_at'>) => {
+  const createUser = async (userData: Omit<User, 'id' | 'created_at'> & { password?: string }) => {
     try {
-      // Generate a random UUID for the new user
-      const userId = crypto.randomUUID();
-      
-      // Insert user profile directly (admin bypass)
+      if (!userData.password) {
+        throw new Error('Password is required for creating new users');
+      }
+
+      // Create user in Supabase Auth with admin privileges
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          name: userData.name,
+          role: userData.role,
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Failed to create user - no user data returned');
+      }
+
+      // The profile will be automatically created by the database trigger
+      // We just need to update it with the correct role and name
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          id: userId,
+        .update({
           name: userData.name,
-          email: userData.email,
           role: userData.role,
-        });
+        })
+        .eq('id', authData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.warn('Profile update failed, but user was created:', profileError);
+        // Don't throw here as the user was successfully created
+      }
 
       toast({
         title: "Success! 🎉",
-        description: "User profile created successfully. User will need to sign up separately.",
+        description: "User created successfully and can now sign in.",
       });
       
       fetchUsers();
@@ -77,7 +97,7 @@ export const useAdminUsers = () => {
       console.error('Error creating user:', error);
       toast({
         title: "Error",
-        description: "Failed to create user profile.",
+        description: error instanceof Error ? error.message : "Failed to create user.",
         variant: "destructive",
       });
       return false;
@@ -117,12 +137,19 @@ export const useAdminUsers = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (error) throw error;
+      // Delete the user from Supabase Auth (this will cascade to profiles)
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) {
+        // If auth deletion fails, try deleting just the profile
+        console.warn('Auth user deletion failed, attempting profile deletion:', authError);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (profileError) throw profileError;
+      }
 
       toast({
         title: "Success! 👋",
@@ -144,12 +171,26 @@ export const useAdminUsers = () => {
 
   const bulkDeleteUsers = async (userIds: string[]) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .in('id', userIds);
-
-      if (error) throw error;
+      // Try to delete users from auth first
+      const authDeletionPromises = userIds.map(userId => 
+        supabase.auth.admin.deleteUser(userId)
+      );
+      
+      const authResults = await Promise.allSettled(authDeletionPromises);
+      
+      // For any auth deletions that failed, try deleting just the profile
+      const failedAuthDeletions = userIds.filter((_, index) => 
+        authResults[index].status === 'rejected'
+      );
+      
+      if (failedAuthDeletions.length > 0) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .in('id', failedAuthDeletions);
+        
+        if (profileError) throw profileError;
+      }
 
       toast({
         title: "Success! 🎉",
