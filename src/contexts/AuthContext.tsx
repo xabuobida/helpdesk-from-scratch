@@ -141,13 +141,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Login error:', error);
-        return {
-          success: false,
-          error: {
-            code: error.message === 'Email not confirmed' ? 'email_not_confirmed' : 'invalid_credentials',
-            message: error.message
-          }
-        };
+        
+        // Check for specific error types
+        if (error.message === 'Invalid login credentials') {
+          return {
+            success: false,
+            error: {
+              code: 'invalid_credentials',
+              message: 'Invalid login credentials'
+            }
+          };
+        } else if (error.message === 'Email not confirmed') {
+          return {
+            success: false,
+            error: {
+              code: 'email_not_confirmed',
+              message: 'Email not confirmed'
+            }
+          };
+        } else {
+          return {
+            success: false,
+            error: {
+              code: error.name?.toLowerCase() || 'auth_error',
+              message: error.message
+            }
+          };
+        }
       }
       
       console.log('Login successful:', data.user?.id);

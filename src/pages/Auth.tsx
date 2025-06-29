@@ -151,14 +151,58 @@ const Auth = () => {
         });
         navigate('/');
       } else {
+        // If login fails, automatically switch to signup mode and create the account
         toast({
-          title: "Test Account Not Found",
-          description: `The ${testRole} test account doesn't exist yet. Please create it first.`,
-          variant: "destructive",
+          title: "Creating Test Account",
+          description: `The ${testRole} test account doesn't exist yet. Creating it now...`,
         });
-        // Auto-switch to signup mode and fill credentials
+        
+        // Switch to signup mode and fill credentials
         setIsLogin(false);
-        fillTestCredentials(testRole);
+        setEmail(`${testRole}@test.com`);
+        setPassword('password123');
+        setName(`Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`);
+        setRole(testRole);
+        
+        // Automatically create the account
+        const signupResult = await signup(
+          `${testRole}@test.com`, 
+          'password123', 
+          `Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`, 
+          testRole
+        );
+        
+        if (signupResult.success) {
+          toast({
+            title: "Test Account Created",
+            description: `${testRole} test account created successfully! Now logging in...`,
+          });
+          
+          // Wait a moment for the account to be fully created
+          setTimeout(async () => {
+            const loginResult = await login(`${testRole}@test.com`, 'password123');
+            if (loginResult.success) {
+              toast({
+                title: "Success",
+                description: `Logged in as ${testRole}`,
+              });
+              navigate('/');
+            } else {
+              toast({
+                title: "Login Failed",
+                description: "Account created but login failed. Please try logging in manually.",
+                variant: "destructive",
+              });
+              setIsLogin(true);
+            }
+          }, 1000);
+        } else {
+          toast({
+            title: "Account Creation Failed",
+            description: signupResult.error?.message || "Failed to create test account",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -305,7 +349,7 @@ const Auth = () => {
                 <div className="space-y-3">
                   <h3 className="font-medium text-gray-900">Try Demo Accounts</h3>
                   <p className="text-sm text-gray-600">
-                    Click to login instantly with pre-configured test accounts:
+                    Click to login instantly. If the account doesn't exist, it will be created automatically:
                   </p>
                   
                   <div className="space-y-2">
