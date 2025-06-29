@@ -43,36 +43,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createProfileIfNotExists = async (authUser: User) => {
     try {
+      console.log('Checking profile for user:', authUser.id);
+      
       // First, try to get existing profile
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
-      if (existingProfile && !fetchError) {
-        // Profile exists, return it
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', fetchError);
+        return null;
+      }
+
+      if (existingProfile) {
+        console.log('Found existing profile:', existingProfile);
         return existingProfile;
       }
 
       // Profile doesn't exist, create it
       console.log('Creating profile for user:', authUser.id);
+      const profileData = {
+        id: authUser.id,
+        email: authUser.email || '',
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+        role: authUser.user_metadata?.role || 'customer'
+      };
+
+      console.log('Profile data to insert:', profileData);
+
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
-        .insert({
-          id: authUser.id,
-          email: authUser.email || '',
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
-          role: authUser.user_metadata?.role || 'customer'
-        })
+        .insert(profileData)
         .select()
         .single();
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
-        return null;
+        // If insert fails, try to fetch again in case it was created by trigger
+        const { data: retryProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle();
+        
+        return retryProfile;
       }
 
+      console.log('Created new profile:', newProfile);
       return newProfile;
     } catch (error) {
       console.error('Error in createProfileIfNotExists:', error);
@@ -81,27 +100,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+        
         setSession(session);
         
         if (session?.user) {
           // Get or create user profile
           const profile = await createProfileIfNotExists(session.user);
           
-          if (profile) {
+          if (profile && mounted) {
             setUser({
               id: profile.id,
               email: profile.email,
               name: profile.name,
               role: profile.role as 'admin' | 'agent' | 'customer'
             });
-          } else {
+          } else if (mounted) {
             console.error('Failed to get or create user profile');
-            // Don't set user to null here, as it might cause redirect loops
-            // Instead, create a basic user object from auth data
+            // Create a basic user object from auth data as fallback
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -109,30 +132,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: (session.user.user_metadata?.role as 'admin' | 'agent' | 'customer') || 'customer'
             });
           }
-        } else {
+        } else if (mounted) {
           setUser(null);
         }
         
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // This will trigger the auth state change listener above
-        setSession(session);
-      } else {
-        setIsLoading(false);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (session && mounted) {
+          // This will trigger the auth state change listener above
+          console.log('Found existing session for user:', session.user.id);
+        } else if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       setIsLoading(true);
+      console.log('Attempting login for:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -188,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, name: string, role: string): Promise<AuthResult> => {
     try {
       setIsLoading(true);
+      console.log('Attempting signup for:', email, 'with role:', role);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -212,6 +257,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('Signup successful:', data.user?.id);
+      
+      // If user is immediately confirmed (no email confirmation required)
+      if (data.user && !data.user.email_confirmed_at) {
+        console.log('User created but email not confirmed');
+      } else if (data.user && data.user.email_confirmed_at) {
+        console.log('User created and email confirmed');
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Signup exception:', error);
@@ -227,6 +280,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    console.log('Logging out user');
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

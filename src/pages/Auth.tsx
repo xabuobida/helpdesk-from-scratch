@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Info, User, Shield, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, Info, User, Shield, UserCheck, AlertCircle } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -73,6 +73,7 @@ const Auth = () => {
       let result = null;
       
       if (isLogin) {
+        console.log('Attempting login with:', email);
         result = await login(email, password);
         if (result.success) {
           toast({
@@ -103,6 +104,7 @@ const Auth = () => {
           }
         }
       } else {
+        console.log('Attempting signup with:', email, role);
         result = await signup(email, password, name, role);
         if (result.success) {
           toast({
@@ -143,6 +145,7 @@ const Auth = () => {
   const loginWithTestAccount = async (testRole: string) => {
     setLoading(true);
     try {
+      console.log(`Attempting to login with ${testRole} test account`);
       const result = await login(`${testRole}@test.com`, 'password123');
       if (result.success) {
         toast({
@@ -151,20 +154,14 @@ const Auth = () => {
         });
         navigate('/');
       } else {
-        // If login fails, automatically switch to signup mode and create the account
+        // If login fails, automatically create the account
+        console.log(`${testRole} account doesn't exist, creating it...`);
         toast({
           title: "Creating Test Account",
           description: `The ${testRole} test account doesn't exist yet. Creating it now...`,
         });
         
-        // Switch to signup mode and fill credentials
-        setIsLogin(false);
-        setEmail(`${testRole}@test.com`);
-        setPassword('password123');
-        setName(`Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`);
-        setRole(testRole);
-        
-        // Automatically create the account
+        // Create the account
         const signupResult = await signup(
           `${testRole}@test.com`, 
           'password123', 
@@ -178,7 +175,7 @@ const Auth = () => {
             description: `${testRole} test account created successfully! Now logging in...`,
           });
           
-          // Wait a moment for the account to be fully created
+          // Wait a moment for the account to be fully created, then try to login
           setTimeout(async () => {
             const loginResult = await login(`${testRole}@test.com`, 'password123');
             if (loginResult.success) {
@@ -193,9 +190,14 @@ const Auth = () => {
                 description: "Account created but login failed. Please try logging in manually.",
                 variant: "destructive",
               });
+              // Fill the form for manual login
+              setEmail(`${testRole}@test.com`);
+              setPassword('password123');
               setIsLogin(true);
             }
-          }, 1000);
+            setLoading(false);
+          }, 2000);
+          return; // Don't set loading to false here, wait for the timeout
         } else {
           toast({
             title: "Account Creation Failed",
@@ -205,6 +207,7 @@ const Auth = () => {
         }
       }
     } catch (error) {
+      console.error('Error with test account:', error);
       toast({
         title: "Error",
         description: "Failed to login with test account",
@@ -344,6 +347,19 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Debug Info */}
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">Debug Info</span>
+              </div>
+              <div className="text-xs text-yellow-700 space-y-1">
+                <div>Database tables should be set up automatically</div>
+                <div>Test accounts will be created on first use</div>
+                <div>Check browser console for detailed logs</div>
+              </div>
+            </div>
+
             {isLogin ? (
               <>
                 <div className="space-y-3">
