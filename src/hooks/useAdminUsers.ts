@@ -54,36 +54,32 @@ export const useAdminUsers = () => {
         throw new Error('Password is required for creating new users');
       }
 
-      // Create user in Supabase Auth with admin privileges
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          name: userData.name,
-          role: userData.role,
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('Failed to create user - no user data returned');
+      // Get the current session to include the auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('You must be logged in to create users');
       }
 
-      // The profile will be automatically created by the database trigger
-      // We just need to update it with the correct role and name
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      // Call the Edge Function to create the user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: userData.email,
+          password: userData.password,
           name: userData.name,
           role: userData.role,
-        })
-        .eq('id', authData.user.id);
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (profileError) {
-        console.warn('Profile update failed, but user was created:', profileError);
-        // Don't throw here as the user was successfully created
+      if (error) {
+        throw new Error(error.message || 'Failed to create user');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create user');
       }
 
       toast({
@@ -137,19 +133,14 @@ export const useAdminUsers = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      // Delete the user from Supabase Auth (this will cascade to profiles)
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      // For now, we'll just delete the profile since we can't use admin.deleteUser from client
+      // In a production app, you'd want another Edge Function for this
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
       
-      if (authError) {
-        // If auth deletion fails, try deleting just the profile
-        console.warn('Auth user deletion failed, attempting profile deletion:', authError);
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
-        
-        if (profileError) throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast({
         title: "Success! 👋",
@@ -171,26 +162,14 @@ export const useAdminUsers = () => {
 
   const bulkDeleteUsers = async (userIds: string[]) => {
     try {
-      // Try to delete users from auth first
-      const authDeletionPromises = userIds.map(userId => 
-        supabase.auth.admin.deleteUser(userId)
-      );
+      // For now, we'll just delete the profiles since we can't use admin.deleteUser from client
+      // In a production app, you'd want another Edge Function for this
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .in('id', userIds);
       
-      const authResults = await Promise.allSettled(authDeletionPromises);
-      
-      // For any auth deletions that failed, try deleting just the profile
-      const failedAuthDeletions = userIds.filter((_, index) => 
-        authResults[index].status === 'rejected'
-      );
-      
-      if (failedAuthDeletions.length > 0) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .in('id', failedAuthDeletions);
-        
-        if (profileError) throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast({
         title: "Success! 🎉",
