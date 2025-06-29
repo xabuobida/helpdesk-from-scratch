@@ -10,14 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string; // Changed from union type to string
-  created_at: string;
-}
+import { User } from '@/hooks/useAdminUsers';
 
 interface DeleteConfirmModalProps {
   open: boolean;
