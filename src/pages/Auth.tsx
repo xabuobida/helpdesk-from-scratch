@@ -132,7 +132,7 @@ const Auth = () => {
   };
 
   const fillTestCredentials = (testRole: string) => {
-    setEmail(`${testRole}@test.local`);
+    setEmail(`${testRole}@test.com`);
     setPassword('password123');
     if (!isLogin) {
       setName(`Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`);
@@ -143,7 +143,7 @@ const Auth = () => {
   const loginWithTestAccount = async (testRole: string) => {
     setLoading(true);
     try {
-      const result = await login(`${testRole}@test.local`, 'password123');
+      const result = await login(`${testRole}@test.com`, 'password123');
       if (result.success) {
         toast({
           title: "Success",
@@ -159,14 +159,14 @@ const Auth = () => {
         
         // Switch to signup mode and fill credentials
         setIsLogin(false);
-        setEmail(`${testRole}@test.local`);
+        setEmail(`${testRole}@test.com`);
         setPassword('password123');
         setName(`Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`);
         setRole(testRole);
         
         // Automatically create the account
         const signupResult = await signup(
-          `${testRole}@test.local`, 
+          `${testRole}@test.com`, 
           'password123', 
           `Test ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`, 
           testRole
@@ -180,7 +180,7 @@ const Auth = () => {
           
           // Wait a moment for the account to be fully created
           setTimeout(async () => {
-            const loginResult = await login(`${testRole}@test.local`, 'password123');
+            const loginResult = await login(`${testRole}@test.com`, 'password123');
             if (loginResult.success) {
               toast({
                 title: "Success",
@@ -362,7 +362,7 @@ const Auth = () => {
                       <Shield className="h-4 w-4 mr-2 text-red-600" />
                       <div className="text-left">
                         <div className="font-medium">Admin Account</div>
-                        <div className="text-xs text-gray-500">admin@test.local</div>
+                        <div className="text-xs text-gray-500">admin@test.com</div>
                       </div>
                     </Button>
                     
@@ -375,7 +375,7 @@ const Auth = () => {
                       <UserCheck className="h-4 w-4 mr-2 text-blue-600" />
                       <div className="text-left">
                         <div className="font-medium">Support Agent</div>
-                        <div className="text-xs text-gray-500">agent@test.local</div>
+                        <div className="text-xs text-gray-500">agent@test.com</div>
                       </div>
                     </Button>
                     
@@ -388,7 +388,7 @@ const Auth = () => {
                       <User className="h-4 w-4 mr-2 text-green-600" />
                       <div className="text-left">
                         <div className="font-medium">Customer Account</div>
-                        <div className="text-xs text-gray-500">customer@test.local</div>
+                        <div className="text-xs text-gray-500">customer@test.com</div>
                       </div>
                     </Button>
                   </div>
@@ -406,7 +406,7 @@ const Auth = () => {
                       onClick={() => fillTestCredentials('admin')}
                       className="w-full text-left justify-start text-xs"
                     >
-                      Fill Admin: admin@test.local / password123
+                      Fill Admin: admin@test.com / password123
                     </Button>
                     <Button
                       variant="ghost"
@@ -414,7 +414,7 @@ const Auth = () => {
                       onClick={() => fillTestCredentials('agent')}
                       className="w-full text-left justify-start text-xs"
                     >
-                      Fill Agent: agent@test.local / password123
+                      Fill Agent: agent@test.com / password123
                     </Button>
                     <Button
                       variant="ghost"
@@ -422,7 +422,7 @@ const Auth = () => {
                       onClick={() => fillTestCredentials('customer')}
                       className="w-full text-left justify-start text-xs"
                     >
-                      Fill Customer: customer@test.local / password123
+                      Fill Customer: customer@test.com / password123
                     </Button>
                   </div>
                 </div>
