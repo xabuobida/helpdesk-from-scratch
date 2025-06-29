@@ -41,46 +41,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Bypass authentication - automatically set a test admin user
   useEffect(() => {
-    const bypassAuth = () => {
-      console.log('🚀 Bypassing authentication - setting test admin user');
+    // Get initial session
+    const getInitialSession = async () => {
+      console.log('Getting initial session...');
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      // Create a mock user profile
-      const mockUser: UserProfile = {
-        id: 'test-admin-id',
-        email: 'admin@example.com',
-        name: 'Test Admin',
-        role: 'admin'
-      };
+      if (error) {
+        console.error('Error getting session:', error);
+        setIsLoading(false);
+        return;
+      }
 
-      // Create a mock session
-      const mockSession = {
-        access_token: 'mock-token',
-        refresh_token: 'mock-refresh',
-        expires_in: 3600,
-        token_type: 'bearer',
-        user: {
-          id: 'test-admin-id',
-          email: 'admin@example.com',
-          user_metadata: {
-            name: 'Test Admin',
-            role: 'admin'
-          }
+      if (session?.user) {
+        console.log('Found existing session for user:', session.user.id);
+        const profile = await createProfileIfNotExists(session.user);
+        if (profile) {
+          setUser(profile);
+          setSession(session);
         }
-      } as Session;
-
-      setUser(mockUser);
-      setSession(mockSession);
-      setIsLoading(false);
+      }
       
-      console.log('✅ Authentication bypassed successfully');
+      setIsLoading(false);
     };
 
-    // Simulate a brief loading period then bypass auth
-    const timer = setTimeout(bypassAuth, 500);
-    
-    return () => clearTimeout(timer);
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await createProfileIfNotExists(session.user);
+        if (profile) {
+          setUser(profile);
+          setSession(session);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+      }
+      
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const createProfileIfNotExists = async (authUser: User) => {
