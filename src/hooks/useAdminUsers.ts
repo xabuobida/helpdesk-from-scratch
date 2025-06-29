@@ -49,6 +49,51 @@ export const useAdminUsers = () => {
     }
   };
 
+  const createUser = async (userData: Omit<User, 'id' | 'created_at'>) => {
+    try {
+      // Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: 'tempPassword123!', // Temporary password - user should reset
+        email_confirm: true,
+        user_metadata: {
+          name: userData.name,
+          role: userData.role
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Insert user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+        });
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Success! 🎉",
+        description: "User created successfully. They will need to reset their password.",
+      });
+      
+      fetchUsers();
+      return true;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create user. Make sure you have admin permissions.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const updateUser = async (userId: string, userData: Omit<User, 'id' | 'created_at'>) => {
     try {
       const { error } = await supabase
@@ -82,12 +127,21 @@ export const useAdminUsers = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
+      // Delete from profiles table first
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Delete from auth users (admin function)
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) {
+        console.warn('Could not delete auth user:', authError);
+        // Continue anyway as profile was deleted
+      }
 
       toast({
         title: "Success! 👋",
@@ -109,12 +163,22 @@ export const useAdminUsers = () => {
 
   const bulkDeleteUsers = async (userIds: string[]) => {
     try {
-      const { error } = await supabase
+      // Delete from profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .in('id', userIds);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Try to delete from auth users (may fail if no admin permissions)
+      for (const userId of userIds) {
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (authError) {
+          console.warn('Could not delete auth user:', userId, authError);
+        }
+      }
 
       toast({
         title: "Success! 🎉",
@@ -128,7 +192,7 @@ export const useAdminUsers = () => {
       toast({
         title: "Error",
         description: "Failed to delete users",
-        variant: "destructive",
+        variant: "descriptive",
       });
       return false;
     }
@@ -142,6 +206,7 @@ export const useAdminUsers = () => {
     users,
     loading,
     fetchUsers,
+    createUser,
     updateUser,
     deleteUser,
     bulkDeleteUsers,

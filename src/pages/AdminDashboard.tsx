@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import { useAdminUsers, User } from '@/hooks/useAdminUsers';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { users, loading, updateUser, deleteUser, bulkDeleteUsers } = useAdminUsers();
+  const { users, loading, createUser, updateUser, deleteUser, bulkDeleteUsers } = useAdminUsers();
   
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,10 +51,7 @@ const AdminDashboard = () => {
   const handleUserSave = async (userData: Omit<User, 'id' | 'created_at'>) => {
     try {
       if (userModal.mode === 'create') {
-        toast({
-          title: "Info",
-          description: "User creation requires additional backend setup",
-        });
+        await createUser(userData);
       } else if (userModal.user) {
         await updateUser(userModal.user.id, userData);
       }
