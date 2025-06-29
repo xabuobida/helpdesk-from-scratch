@@ -192,7 +192,7 @@ export const useAdminUsers = () => {
       toast({
         title: "Error",
         description: "Failed to delete users",
-        variant: "descriptive",
+        variant: "destructive",
       });
       return false;
     }
