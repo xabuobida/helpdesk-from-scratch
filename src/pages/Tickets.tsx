@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TicketList } from "@/components/TicketList";
@@ -13,6 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTicketNotifications } from "@/hooks/useTicketNotifications";
+import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 
 interface SupabaseTicket {
   id: string;
@@ -37,6 +38,11 @@ interface SupabaseTicket {
 const Tickets = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Set up notification hooks
+  useTicketNotifications();
+  useEmailNotifications();
+  
   const [activeFilter, setActiveFilter] = useState("unassigned");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -194,7 +200,7 @@ const Tickets = () => {
       toast({
         title: "Success",
         description: user?.role === 'customer' 
-          ? "Ticket created successfully and assigned to support agent."
+          ? "Ticket created successfully! Support team has been notified and will respond soon."
           : "Ticket created successfully.",
       });
 
