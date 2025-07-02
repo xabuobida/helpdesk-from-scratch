@@ -36,6 +36,14 @@ export const useAuth = () => {
   return context;
 };
 
+// Helper function to validate and convert role
+const validateRole = (role: string): 'admin' | 'agent' | 'customer' => {
+  if (role === 'admin' || role === 'agent' || role === 'customer') {
+    return role;
+  }
+  return 'customer'; // Default fallback
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -90,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const createProfileIfNotExists = async (authUser: User) => {
+  const createProfileIfNotExists = async (authUser: User): Promise<UserProfile | null> => {
     try {
       console.log('Checking profile for user:', authUser.id);
       
@@ -108,7 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (existingProfile) {
         console.log('Found existing profile:', existingProfile);
-        return existingProfile;
+        // Convert the database profile to UserProfile type
+        return {
+          id: existingProfile.id,
+          email: existingProfile.email,
+          name: existingProfile.name,
+          role: validateRole(existingProfile.role)
+        };
       }
 
       // Profile doesn't exist, create it
@@ -137,11 +151,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', authUser.id)
           .maybeSingle();
         
-        return retryProfile;
+        if (retryProfile) {
+          return {
+            id: retryProfile.id,
+            email: retryProfile.email,
+            name: retryProfile.name,
+            role: validateRole(retryProfile.role)
+          };
+        }
+        return null;
       }
 
       console.log('Created new profile:', newProfile);
-      return newProfile;
+      // Convert the database profile to UserProfile type
+      return {
+        id: newProfile.id,
+        email: newProfile.email,
+        name: newProfile.name,
+        role: validateRole(newProfile.role)
+      };
     } catch (error) {
       console.error('Error in createProfileIfNotExists:', error);
       return null;
