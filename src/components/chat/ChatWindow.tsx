@@ -27,8 +27,11 @@ export const ChatWindow = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isTyping, setIsTyping] = useState(false);
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Handle typing indicator
@@ -61,9 +64,9 @@ export const ChatWindow = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full">
       {/* Chat Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900">
@@ -93,19 +96,25 @@ export const ChatWindow = ({
         </div>
       </div>
       
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isOwnMessage = message.sender_id === currentUser?.id;
-          
-          return (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isOwnMessage={isOwnMessage}
-            />
-          );
-        })}
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map((message) => {
+            const isOwnMessage = message.sender_id === currentUser?.id;
+            
+            return (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isOwnMessage={isOwnMessage}
+              />
+            );
+          })
+        )}
         
         {/* Typing indicator */}
         {isTyping && (
@@ -124,11 +133,13 @@ export const ChatWindow = ({
       </div>
       
       {/* Message Input */}
-      <MessageInput
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        onSendMessage={onSendMessage}
-      />
+      <div className="flex-shrink-0">
+        <MessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          onSendMessage={onSendMessage}
+        />
+      </div>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -17,7 +17,10 @@ const Chat = () => {
     sendMessage,
     updateChatStatus
   } = useChat();
-  const { showNotification } = useNotifications();
+  
+  // Set up real-time notifications
+  useRealtimeNotifications();
+  
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -36,19 +39,6 @@ const Chat = () => {
       await updateChatStatus(chat.id, 'active', user.id);
     }
   };
-
-  // Show notification for new messages when not on the chat page
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.sender_id !== user?.id && document.hidden) {
-        showNotification('New Message', {
-          body: lastMessage.message,
-          tag: 'chat-message'
-        });
-      }
-    }
-  }, [messages, user?.id, showNotification]);
 
   if (loading) {
     return (
@@ -90,8 +80,11 @@ const Chat = () => {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500">
+              <div className="animate-pulse mb-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+              </div>
               <h3 className="text-lg font-medium mb-2">
-                {user?.role === 'customer' ? 'Starting your chat...' : 'No conversation selected'}
+                {user?.role === 'customer' ? 'Connecting to support...' : 'No conversation selected'}
               </h3>
               <p>
                 {user?.role === 'customer' 

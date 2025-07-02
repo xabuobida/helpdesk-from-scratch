@@ -89,16 +89,11 @@ export const useChat = () => {
     if (!user || user.role !== 'customer') return null;
 
     try {
-      const { data: existingRoom, error: fetchError } = await supabase
+      const { data: existingRoom } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('customer_id', user.id)
         .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error checking for existing chat room:', fetchError);
-        return null;
-      }
 
       if (existingRoom) {
         return existingRoom;
@@ -130,7 +125,7 @@ export const useChat = () => {
     }
   };
 
-  // Send message with optimistic updates
+  // Send message with real-time updates
   const sendMessage = async (chatRoomId: string, message: string) => {
     if (!user || !message.trim()) return;
 
@@ -200,24 +195,25 @@ export const useChat = () => {
 
     // Subscribe to chat room changes
     const roomsChannel = supabase
-      .channel('chat-rooms-changes')
+      .channel('chat-rooms-real-time')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'chat_rooms'
+          table: 'chat_rooms',
+          filter: user.role === 'customer' ? `customer_id=eq.${user.id}` : undefined
         },
         (payload) => {
-          console.log('Chat room change:', payload);
+          console.log('Chat room change detected:', payload);
           fetchChatRooms();
         }
       )
       .subscribe();
 
-    // Subscribe to message changes
+    // Subscribe to message changes for all chat rooms
     const messagesChannel = supabase
-      .channel('chat-messages-changes')
+      .channel('chat-messages-real-time')
       .on(
         'postgres_changes',
         {
@@ -226,24 +222,23 @@ export const useChat = () => {
           table: 'chat_messages'
         },
         (payload) => {
-          console.log('New message:', payload);
+          console.log('New message received:', payload);
           const newMessage = payload.new as any;
           
-          // If message is for the currently selected chat, refresh messages
+          // If message is for the currently selected chat, add it to messages
           if (selectedChat && newMessage.chat_room_id === selectedChat.id) {
             fetchMessages(selectedChat.id);
           }
           
-          // Show notification for new messages (except own messages)
+          // Show toast notification for new messages from others
           if (newMessage.sender_id !== user.id) {
             toast({
               title: "New Message",
-              description: `New message in chat`,
-              variant: "default"
+              description: "You have a new message",
             });
           }
           
-          // Refresh chat rooms to update last message
+          // Refresh chat rooms to update timestamps
           fetchChatRooms();
         }
       )
