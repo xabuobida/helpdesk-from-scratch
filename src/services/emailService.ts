@@ -26,8 +26,8 @@ class EmailService {
 
   constructor() {
     // In production, these would come from environment variables
-    this.apiKey = process.env.VITE_EMAIL_API_KEY || '';
-    this.fromEmail = process.env.VITE_FROM_EMAIL || 'noreply@helpdesk.com';
+    this.apiKey = import.meta.env.VITE_EMAIL_API_KEY || '';
+    this.fromEmail = import.meta.env.VITE_FROM_EMAIL || 'noreply@helpdesk.com';
   }
 
   async sendNotification(notification: EmailNotification): Promise<boolean> {
