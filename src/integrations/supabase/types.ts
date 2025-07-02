@@ -160,27 +160,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          company: string | null
           created_at: string | null
           email: string
           id: string
+          last_active: string | null
           name: string
+          notes: string | null
+          phone: string | null
           role: string
+          status: string | null
+          tickets_count: number | null
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          company?: string | null
           created_at?: string | null
           email: string
           id?: string
+          last_active?: string | null
           name: string
+          notes?: string | null
+          phone?: string | null
           role: string
+          status?: string | null
+          tickets_count?: number | null
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          company?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          last_active?: string | null
           name?: string
+          notes?: string | null
+          phone?: string | null
           role?: string
+          status?: string | null
+          tickets_count?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -245,6 +266,10 @@ export type Database = {
     }
     Functions: {
       get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      uid: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

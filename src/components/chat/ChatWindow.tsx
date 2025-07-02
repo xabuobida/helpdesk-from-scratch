@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
@@ -25,10 +25,22 @@ export const ChatWindow = ({
   currentUser
 }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    if (newMessage.trim()) {
+      setIsTyping(true);
+      const timeout = setTimeout(() => setIsTyping(false), 1000);
+      return () => clearTimeout(timeout);
+    } else {
+      setIsTyping(false);
+    }
+  }, [newMessage]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -67,9 +79,17 @@ export const ChatWindow = ({
               } • Status: {getStatusText(selectedChat.status)}
             </p>
           </div>
-          <Badge className={`${getStatusColor(selectedChat.status)} text-white`}>
-            {getStatusText(selectedChat.status).toUpperCase()}
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge className={`${getStatusColor(selectedChat.status)} text-white`}>
+              {getStatusText(selectedChat.status).toUpperCase()}
+            </Badge>
+            {selectedChat.status === 'active' && (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600">Online</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
@@ -86,6 +106,20 @@ export const ChatWindow = ({
             />
           );
         })}
+        
+        {/* Typing indicator */}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-200 rounded-lg px-4 py-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
       

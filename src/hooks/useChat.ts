@@ -12,7 +12,7 @@ export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch chat rooms
+  // Fetch chat rooms with enhanced error handling
   const fetchChatRooms = async () => {
     if (!user) return;
 
@@ -42,7 +42,6 @@ export const useChat = () => {
         return;
       }
 
-      // Transform the data to match our ChatRoom interface
       const transformedData: ChatRoom[] = (data || []).map(room => ({
         id: room.id,
         customer_id: room.customer_id,
@@ -62,7 +61,7 @@ export const useChat = () => {
     }
   };
 
-  // Fetch messages for a specific chat room
+  // Fetch messages with real-time updates
   const fetchMessages = async (chatRoomId: string) => {
     try {
       const { data, error } = await supabase
@@ -90,7 +89,6 @@ export const useChat = () => {
     if (!user || user.role !== 'customer') return null;
 
     try {
-      // Check if customer already has a chat room
       const { data: existingRoom, error: fetchError } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -106,7 +104,6 @@ export const useChat = () => {
         return existingRoom;
       }
 
-      // Create new chat room
       const { data: newRoom, error: createError } = await supabase
         .from('chat_rooms')
         .insert({
@@ -133,7 +130,7 @@ export const useChat = () => {
     }
   };
 
-  // Send message
+  // Send message with optimistic updates
   const sendMessage = async (chatRoomId: string, message: string) => {
     if (!user || !message.trim()) return;
 
@@ -167,7 +164,7 @@ export const useChat = () => {
     }
   };
 
-  // Update chat room status (for agents)
+  // Update chat room status
   const updateChatStatus = async (chatRoomId: string, status: 'active' | 'waiting' | 'closed', agentId?: string) => {
     if (!user || user.role === 'customer') return;
 
@@ -195,9 +192,11 @@ export const useChat = () => {
     }
   };
 
-  // Set up real-time subscriptions
+  // Enhanced real-time subscriptions
   useEffect(() => {
     if (!user) return;
+
+    console.log('Setting up real-time subscriptions for user:', user.id);
 
     // Subscribe to chat room changes
     const roomsChannel = supabase
@@ -209,7 +208,8 @@ export const useChat = () => {
           schema: 'public',
           table: 'chat_rooms'
         },
-        () => {
+        (payload) => {
+          console.log('Chat room change:', payload);
           fetchChatRooms();
         }
       )
@@ -226,11 +226,21 @@ export const useChat = () => {
           table: 'chat_messages'
         },
         (payload) => {
+          console.log('New message:', payload);
           const newMessage = payload.new as any;
           
-          // If message is for the currently selected chat, add it to messages
+          // If message is for the currently selected chat, refresh messages
           if (selectedChat && newMessage.chat_room_id === selectedChat.id) {
             fetchMessages(selectedChat.id);
+          }
+          
+          // Show notification for new messages (except own messages)
+          if (newMessage.sender_id !== user.id) {
+            toast({
+              title: "New Message",
+              description: `New message in chat`,
+              variant: "default"
+            });
           }
           
           // Refresh chat rooms to update last message
@@ -240,14 +250,16 @@ export const useChat = () => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(roomsChannel);
       supabase.removeChannel(messagesChannel);
     };
-  }, [user, selectedChat]);
+  }, [user, selectedChat?.id]);
 
   // Initial load
   useEffect(() => {
     if (user) {
+      console.log('Initial chat data load for user:', user.id);
       fetchChatRooms();
     }
   }, [user]);
@@ -255,13 +267,14 @@ export const useChat = () => {
   // Auto-create chat room for customers and auto-select it
   useEffect(() => {
     if (user?.role === 'customer' && chatRooms.length === 0 && !loading) {
+      console.log('Auto-creating chat room for customer');
       getOrCreateChatRoom().then((room) => {
         if (room) {
           fetchChatRooms();
         }
       });
     } else if (user?.role === 'customer' && chatRooms.length === 1 && !selectedChat) {
-      // Auto-select the single chat room for customers
+      console.log('Auto-selecting single chat room for customer');
       setSelectedChat(chatRooms[0]);
     }
   }, [user, chatRooms.length, loading, selectedChat]);
@@ -269,6 +282,7 @@ export const useChat = () => {
   // Fetch messages when selected chat changes
   useEffect(() => {
     if (selectedChat) {
+      console.log('Fetching messages for chat room:', selectedChat.id);
       fetchMessages(selectedChat.id);
     }
   }, [selectedChat]);

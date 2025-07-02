@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ const Chat = () => {
     sendMessage,
     updateChatStatus
   } = useChat();
+  const { showNotification } = useNotifications();
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -34,6 +36,19 @@ const Chat = () => {
       await updateChatStatus(chat.id, 'active', user.id);
     }
   };
+
+  // Show notification for new messages when not on the chat page
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender_id !== user?.id && document.hidden) {
+        showNotification('New Message', {
+          body: lastMessage.message,
+          tag: 'chat-message'
+        });
+      }
+    }
+  }, [messages, user?.id, showNotification]);
 
   if (loading) {
     return (
