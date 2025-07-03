@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from './useNotifications';
@@ -7,15 +7,22 @@ import { useNotifications } from './useNotifications';
 export const useTicketNotifications = () => {
   const { user } = useAuth();
   const { showNotification } = useNotifications();
+  const subscriptionsRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!user || user.role === 'customer') return;
 
     console.log('Setting up ticket notifications for user:', user.id);
 
+    // Clean up existing subscriptions
+    subscriptionsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    subscriptionsRef.current = [];
+
     // Subscribe to new tickets for agents and admins
     const ticketsChannel = supabase
-      .channel('ticket-notifications')
+      .channel(`ticket-notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -44,21 +51,13 @@ export const useTicketNotifications = () => {
             icon: '/favicon.ico',
             requireInteraction: true
           });
-
-          // Send email notification (this would typically be handled by a backend service)
-          console.log('Email notification would be sent for new ticket:', {
-            ticketId: newTicket.id,
-            title: newTicket.title,
-            customer: customerName,
-            priority: newTicket.priority
-          });
         }
       )
       .subscribe();
 
     // Subscribe to ticket status changes
     const statusChannel = supabase
-      .channel('ticket-status-notifications')
+      .channel(`ticket-status-notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -85,10 +84,57 @@ export const useTicketNotifications = () => {
       )
       .subscribe();
 
+    // Subscribe to new messages for staff
+    const messagesChannel = supabase
+      .channel(`message-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        async (payload) => {
+          const newMessage = payload.new as any;
+          
+          // Don't notify about own messages
+          if (newMessage.sender_id === user.id) return;
+
+          // Get ticket and sender info
+          const { data: ticketData } = await supabase
+            .from('tickets')
+            .select('title, customer_id, assigned_to')
+            .eq('id', newMessage.ticket_id)
+            .single();
+
+          // Only notify if user is assigned to ticket or is admin/agent
+          if (ticketData && (ticketData.assigned_to === user.id || user.role === 'admin')) {
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', newMessage.sender_id)
+              .single();
+
+            const senderName = senderData?.name || 'Someone';
+            
+            showNotification('New Message', {
+              body: `${senderName} sent a message on ticket: ${ticketData.title}`,
+              tag: 'ticket-message',
+              icon: '/favicon.ico'
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    subscriptionsRef.current = [ticketsChannel, statusChannel, messagesChannel];
+
     return () => {
       console.log('Cleaning up ticket notification subscriptions');
-      supabase.removeChannel(ticketsChannel);
-      supabase.removeChannel(statusChannel);
+      subscriptionsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      subscriptionsRef.current = [];
     };
-  }, [user, showNotification]);
+  }, [user?.id, user?.role, showNotification]);
 };

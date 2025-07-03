@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -11,18 +12,47 @@ export const useNotifications = () => {
     if ('Notification' in window) {
       const result = await Notification.requestPermission();
       setPermission(result);
+      
+      if (result === 'granted') {
+        toast({
+          title: "Notifications Enabled",
+          description: "You'll now receive desktop notifications for important updates.",
+        });
+      } else if (result === 'denied') {
+        toast({
+          title: "Notifications Blocked",
+          description: "Please enable notifications in your browser settings to receive alerts.",
+          variant: "destructive"
+        });
+      }
+      
       return result;
     }
     return 'denied';
   };
 
-  // Show notification
+  // Show notification with fallback to toast
   const showNotification = (title: string, options?: NotificationOptions) => {
     if (permission === 'granted' && 'Notification' in window) {
-      new Notification(title, {
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        ...options
+      try {
+        new Notification(title, {
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          ...options
+        });
+      } catch (error) {
+        console.error('Failed to show notification:', error);
+        // Fallback to toast
+        toast({
+          title,
+          description: options?.body || '',
+        });
+      }
+    } else {
+      // Fallback to toast notification
+      toast({
+        title,
+        description: options?.body || '',
       });
     }
   };
@@ -34,10 +64,22 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Auto-request permission for logged-in users
+  // Auto-request permission for logged-in users (only once)
   useEffect(() => {
     if (user && permission === 'default') {
-      requestPermission();
+      // Show a toast asking for permission first
+      toast({
+        title: "Enable Notifications?",
+        description: "Get notified about new tickets, messages, and updates. Click to enable.",
+        action: (
+          <button 
+            onClick={requestPermission}
+            className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm"
+          >
+            Enable
+          </button>
+        ),
+      });
     }
   }, [user, permission]);
 

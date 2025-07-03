@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TicketList } from "@/components/TicketList";
@@ -15,6 +14,7 @@ import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTicketNotifications } from "@/hooks/useTicketNotifications";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface SupabaseTicket {
   id: string;
@@ -44,6 +44,7 @@ const Tickets = () => {
   // Set up notification hooks
   useTicketNotifications();
   useEmailNotifications();
+  useRealtimeNotifications();
   
   const [activeFilter, setActiveFilter] = useState("unassigned");
   const [searchQuery, setSearchQuery] = useState("");
