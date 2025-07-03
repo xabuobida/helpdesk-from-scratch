@@ -68,13 +68,17 @@ export const useNotifications = () => {
   useEffect(() => {
     if (user && permission === 'default') {
       // Show a toast asking for permission first
+      const handleEnableClick = () => {
+        requestPermission();
+      };
+
       toast({
         title: "Enable Notifications?",
-        description: "Get notified about new tickets, messages, and updates. Click to enable.",
+        description: "Get notified about new tickets, messages, and updates.",
         action: (
           <button 
-            onClick={requestPermission}
-            className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm"
+            onClick={handleEnableClick}
+            className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
           >
             Enable
           </button>
