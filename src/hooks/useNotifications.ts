@@ -67,23 +67,16 @@ export const useNotifications = () => {
   // Auto-request permission for logged-in users (only once)
   useEffect(() => {
     if (user && permission === 'default') {
-      // Show a toast asking for permission first
-      const handleEnableClick = () => {
-        requestPermission();
-      };
-
+      // Show a simple toast asking for permission
       toast({
         title: "Enable Notifications?",
-        description: "Get notified about new tickets, messages, and updates.",
-        action: (
-          <button 
-            onClick={handleEnableClick}
-            className="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
-          >
-            Enable
-          </button>
-        ),
+        description: "Get notified about new tickets, messages, and updates. Click the Enable button to allow notifications.",
       });
+      
+      // Auto-request permission after a short delay
+      setTimeout(() => {
+        requestPermission();
+      }, 2000);
     }
   }, [user, permission]);
 
