@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TicketList } from "@/components/TicketList";
@@ -6,7 +7,7 @@ import { ActivityFeed } from "@/components/ActivityFeed";
 import { CreateTicketModal } from "@/components/CreateTicketModal";
 import { TicketDetailModal } from "@/components/TicketDetailModal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockActivities } from "@/data/mockData";
+import { useActivities } from "@/hooks/useActivities";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,7 @@ interface SupabaseTicket {
 const Tickets = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { activities, loading: activitiesLoading, addActivity } = useActivities();
   
   // Set up notification hooks
   useTicketNotifications();
@@ -175,7 +177,7 @@ const Tickets = () => {
         customerId = customer.id;
       }
 
-      const { error } = await supabase
+      const { data: newTicket, error } = await supabase
         .from('tickets')
         .insert({
           title: ticketData.title,
@@ -185,7 +187,9 @@ const Tickets = () => {
           category: ticketData.category,
           customer_id: customerId,
           assigned_to: assignedAgentId
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating ticket:', error);
@@ -195,6 +199,11 @@ const Tickets = () => {
           variant: "destructive",
         });
         return;
+      }
+
+      // Add activity for ticket creation
+      if (newTicket) {
+        await addActivity(`created ${ticketData.category} ticket #${newTicket.id}: ${ticketData.title}`);
       }
 
       toast({
@@ -233,6 +242,9 @@ const Tickets = () => {
         });
         return;
       }
+
+      // Add activity for ticket update
+      await addActivity(`updated ticket #${updatedTicket.id}: status changed to ${updatedTicket.status}`);
 
       toast({
         title: "Success",
@@ -316,7 +328,10 @@ const Tickets = () => {
         </div>
         
         <div className="w-80 p-6">
-          <ActivityFeed activities={mockActivities} />
+          <ActivityFeed 
+            activities={activities} 
+            loading={activitiesLoading}
+          />
         </div>
       </div>
 

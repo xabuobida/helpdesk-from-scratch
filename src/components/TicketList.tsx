@@ -1,8 +1,10 @@
 
+import { useState, useEffect } from "react";
 import { Ticket } from "@/types/ticket";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -25,6 +27,35 @@ const statusColors = {
 };
 
 export function TicketList({ tickets, onTicketClick }: TicketListProps) {
+  const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchMessageCounts = async () => {
+      if (tickets.length === 0) return;
+
+      const ticketIds = tickets.map(ticket => ticket.id);
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .select('ticket_id')
+        .in('ticket_id', ticketIds);
+
+      if (error) {
+        console.error('Error fetching message counts:', error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      data?.forEach(message => {
+        counts[message.ticket_id] = (counts[message.ticket_id] || 0) + 1;
+      });
+
+      setMessageCounts(counts);
+    };
+
+    fetchMessageCounts();
+  }, [tickets]);
+
   return (
     <div className="space-y-4">
       {tickets.map((ticket) => (
@@ -45,15 +76,19 @@ export function TicketList({ tickets, onTicketClick }: TicketListProps) {
                 <Badge className={priorityColors[ticket.priority]} variant="secondary">
                   {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
                 </Badge>
-                <span>#{ticket.id}</span>
+                <Badge className={statusColors[ticket.status]} variant="secondary">
+                  {ticket.status.replace('_', ' ').toUpperCase()}
+                </Badge>
+                <span>#{ticket.id.slice(0, 8)}</span>
                 <div className="flex items-center space-x-1">
                   <MessageSquare className="w-3 h-3" />
-                  <span>2</span>
+                  <span>{messageCounts[ticket.id] || 0}</span>
                 </div>
               </div>
             </div>
             <div className="text-right text-xs text-gray-500">
               <p>{formatDistanceToNow(ticket.createdAt, { addSuffix: true })}</p>
+              <p className="text-gray-400">by {ticket.customerName}</p>
             </div>
           </div>
         </div>
