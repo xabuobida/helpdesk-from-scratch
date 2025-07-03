@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,13 +42,7 @@ export const useTicketNotifications = () => {
             body: `${customerName} created a new ${newTicket.priority} priority ticket: ${newTicket.title}`,
             tag: 'new-ticket',
             icon: '/favicon.ico',
-            requireInteraction: true,
-            actions: [
-              {
-                action: 'view',
-                title: 'View Ticket'
-              }
-            ]
+            requireInteraction: true
           });
 
           // Send email notification (this would typically be handled by a backend service)
