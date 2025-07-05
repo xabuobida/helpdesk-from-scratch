@@ -41,7 +41,7 @@ export const useData = () => {
 };
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [notificationSettings, setNotificationSettings] = useState({
     email: true,
