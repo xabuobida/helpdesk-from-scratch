@@ -14,9 +14,9 @@ const Logout = () => {
     logout();
   };
 
-  // If user is already logged out, redirect to login
+  // If user is already logged out, redirect to auth
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return (
