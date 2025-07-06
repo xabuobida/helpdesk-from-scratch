@@ -63,26 +63,53 @@ export const ChatWindow = ({
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-blue-100 text-blue-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-gray-900">
-              {userRole === 'customer' 
-                ? `Chat with ${selectedChat.agent?.name || 'Support Agent'}`
-                : `Chat with ${selectedChat.customer?.name || 'Customer'}`
-              }
+              {selectedChat.ticket?.title || 'Untitled Ticket'}
             </h3>
-            <p className="text-sm text-gray-500">
-              {userRole === 'customer' 
-                ? `Customer ID: ${selectedChat.customer_id}`
-                : `Customer: ${selectedChat.customer?.name} • ID: ${selectedChat.customer_id}`
-              } • Status: {getStatusText(selectedChat.status)}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-gray-500">
+                {userRole === 'customer' 
+                  ? `Support Agent: ${selectedChat.agent?.name || 'Unassigned'}`
+                  : `Customer: ${selectedChat.customer?.name || 'Unknown'}`
+                }
+              </p>
+              {selectedChat.ticket?.category && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs">
+                    {selectedChat.ticket.category}
+                  </span>
+                </>
+              )}
+            </div>
+            {selectedChat.ticket?.description && (
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                {selectedChat.ticket.description}
+              </p>
+            )}
           </div>
           <div className="flex items-center space-x-2">
+            {selectedChat.ticket?.priority && (
+              <Badge className={`${getPriorityColor(selectedChat.ticket.priority)} text-xs`} variant="secondary">
+                {selectedChat.ticket.priority.toUpperCase()}
+              </Badge>
+            )}
             <Badge className={`${getStatusColor(selectedChat.status)} text-white`}>
               {getStatusText(selectedChat.status).toUpperCase()}
             </Badge>

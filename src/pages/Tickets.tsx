@@ -10,11 +10,12 @@ import { useActivities } from "@/hooks/useActivities";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus } from "lucide-react";
+import { Plus, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTicketNotifications } from "@/hooks/useTicketNotifications";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useNavigate } from "react-router-dom";
 
 interface SupabaseTicket {
   id: string;

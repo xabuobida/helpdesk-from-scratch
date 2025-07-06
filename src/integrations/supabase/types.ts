@@ -45,6 +45,7 @@ export type Database = {
           id: string
           message: string
           sender_id: string
+          ticket_id: string | null
         }
         Insert: {
           chat_room_id: string
@@ -52,6 +53,7 @@ export type Database = {
           id?: string
           message: string
           sender_id: string
+          ticket_id?: string | null
         }
         Update: {
           chat_room_id?: string
@@ -59,6 +61,7 @@ export type Database = {
           id?: string
           message?: string
           sender_id?: string
+          ticket_id?: string | null
         }
         Relationships: [
           {
@@ -75,6 +78,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_rooms: {
@@ -84,6 +94,7 @@ export type Database = {
           customer_id: string
           id: string
           status: string
+          ticket_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -92,6 +103,7 @@ export type Database = {
           customer_id: string
           id?: string
           status?: string
+          ticket_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -100,6 +112,7 @@ export type Database = {
           customer_id?: string
           id?: string
           status?: string
+          ticket_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -115,6 +128,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]

@@ -22,7 +22,8 @@ export const useChat = () => {
         .select(`
           *,
           customer:profiles!customer_id(name, email),
-          agent:profiles!agent_id(name, email)
+          agent:profiles!agent_id(name, email),
+          ticket:tickets!ticket_id(id, title, description, status, priority, category)
         `)
         .order('updated_at', { ascending: false });
 
@@ -46,11 +47,13 @@ export const useChat = () => {
         id: room.id,
         customer_id: room.customer_id,
         agent_id: room.agent_id,
+        ticket_id: room.ticket_id,
         status: room.status as 'active' | 'waiting' | 'closed',
         created_at: room.created_at,
         updated_at: room.updated_at,
         customer: room.customer,
-        agent: room.agent
+        agent: room.agent,
+        ticket: room.ticket
       }));
 
       setChatRooms(transformedData);
@@ -130,12 +133,16 @@ export const useChat = () => {
     if (!user || !message.trim()) return;
 
     try {
+      // Get ticket_id from selected chat room
+      const ticketId = selectedChat?.ticket_id;
+      
       const { error } = await supabase
         .from('chat_messages')
         .insert({
           chat_room_id: chatRoomId,
           sender_id: user.id,
-          message: message.trim()
+          message: message.trim(),
+          ticket_id: ticketId
         });
 
       if (error) {

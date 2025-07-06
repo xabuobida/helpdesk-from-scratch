@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
@@ -8,6 +9,9 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 const Chat = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const ticketId = searchParams.get('ticket');
+  
   const {
     chatRooms,
     selectedChat,
