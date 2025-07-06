@@ -11,6 +11,8 @@ interface TicketFiltersProps {
   filterCounts?: {
     unassigned: number;
     assigned: number;
+    in_progress: number;
+    resolved: number;
     all: number;
     archive: number;
   };
@@ -21,13 +23,15 @@ export function TicketFilters({
   onFilterChange,
   searchQuery,
   onSearchChange,
-  filterCounts = { unassigned: 0, assigned: 0, all: 0, archive: 0 }
+  filterCounts = { unassigned: 0, assigned: 0, in_progress: 0, resolved: 0, all: 0, archive: 0 }
 }: TicketFiltersProps) {
   const filters = [
     { id: "unassigned", label: "Unassigned", count: filterCounts.unassigned },
     { id: "assigned", label: "Assigned to me", count: filterCounts.assigned },
+    { id: "in_progress", label: "In Progress", count: filterCounts.in_progress || 0 },
+    { id: "resolved", label: "Resolved", count: filterCounts.resolved || 0 },
     { id: "all", label: "All tickets", count: filterCounts.all },
-    { id: "archive", label: "Archive", count: filterCounts.archive },
+    { id: "closed", label: "Closed", count: filterCounts.archive },
   ];
 
   return (
