@@ -10,16 +10,23 @@ export const useRealtimeNotifications = () => {
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Clean up when user logs out
+      if (channelRef.current) {
+        console.log('Cleaning up notification subscriptions - user logged out');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    // Prevent duplicate subscriptions
+    if (channelRef.current) {
+      console.log('Real-time notifications already set up for user:', user.id);
+      return;
+    }
 
     console.log('Setting up real-time notifications for user:', user.id);
-
-    // Clean up existing subscription
-    if (channelRef.current) {
-      console.log('Cleaning up notification subscriptions');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
 
     // Create a single channel for all notifications
     const channel = supabase.channel(`user-notifications-${user.id}`);

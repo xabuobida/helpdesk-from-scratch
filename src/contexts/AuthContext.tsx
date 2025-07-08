@@ -24,32 +24,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { login, signup, logout: performLogout } = useAuthOperations();
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log('Getting initial session...');
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (session?.user) {
-        console.log('Found existing session for user:', session.user.id);
-        const profile = await createProfileIfNotExists(session.user);
-        if (profile) {
-          setUser(profile);
-          setSession(session);
-        }
-      }
-      
-      setIsLoading(false);
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
+    let isInitialized = false;
+    
+    // Listen for auth changes first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
@@ -64,8 +41,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null);
       }
       
-      setIsLoading(false);
+      // Only set loading to false after initial auth check
+      if (!isInitialized) {
+        setIsLoading(false);
+        isInitialized = true;
+      }
     });
+
+    // Get initial session only once
+    const getInitialSession = async () => {
+      if (isInitialized) return;
+      
+      console.log('Getting initial session...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error);
+        setIsLoading(false);
+        isInitialized = true;
+        return;
+      }
+
+      if (session?.user) {
+        console.log('Found existing session for user:', session.user.id);
+        const profile = await createProfileIfNotExists(session.user);
+        if (profile) {
+          setUser(profile);
+          setSession(session);
+        }
+      }
+      
+      if (!isInitialized) {
+        setIsLoading(false);
+        isInitialized = true;
+      }
+    };
+
+    getInitialSession();
 
     return () => {
       subscription.unsubscribe();
