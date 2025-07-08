@@ -12,10 +12,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react({
       // Use default React plugin instead of SWC for WebContainer compatibility
-      jsxImportSource: '@emotion/react',
-      babel: {
-        plugins: []
-      }
     }),
     mode === 'development' &&
     componentTagger(),
