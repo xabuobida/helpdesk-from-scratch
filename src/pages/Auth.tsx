@@ -22,7 +22,7 @@ const Auth = () => {
         .select('count')
         .limit(1);
       
-      if (!error && data !== null) {
+      if (!error && data !== null && data.length > 0) {
         setDatabaseInitialized(true);
       }
     } catch (error) {
