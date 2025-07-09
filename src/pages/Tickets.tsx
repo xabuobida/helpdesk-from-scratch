@@ -12,14 +12,9 @@ import { useTicketFiltering } from "@/hooks/useTicketFiltering";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus } from "lucide-react";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-
 const Tickets = () => {
   const { user } = useAuth();
   const { activities, loading: activitiesLoading } = useActivities();
-  
-  // Set up consolidated notification hook
-  useRealtimeNotifications();
   
   const [activeFilter, setActiveFilter] = useState("unassigned");
   const [searchQuery, setSearchQuery] = useState("");

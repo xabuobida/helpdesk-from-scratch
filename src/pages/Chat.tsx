@@ -5,8 +5,6 @@ import { useSearchParams } from "react-router-dom";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-
 const Chat = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -21,9 +19,6 @@ const Chat = () => {
     sendMessage,
     updateChatStatus
   } = useChat();
-  
-  // Set up real-time notifications
-  useRealtimeNotifications();
   
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
