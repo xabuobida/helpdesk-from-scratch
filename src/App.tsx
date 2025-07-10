@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { Sidebar } from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -21,6 +22,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component that uses auth-dependent hooks
+const AuthDependentHooks: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Set up real-time notifications globally
+  useRealtimeNotifications();
+  
+  return <>{children}</>;
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -28,34 +37,36 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <DataProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/*" element={
-                  <ProtectedRoute>
-                    <div className="flex min-h-screen w-full">
-                      <Sidebar />
-                      <div className="flex-1">
-                        <ErrorBoundary>
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/tickets" element={<Tickets />} />
-                            <Route path="/chat" element={<Chat />} />
-                            <Route path="/analytics" element={<Analytics />} />
-                            <Route path="/customers" element={<Customers />} />
-                            <Route path="/admin" element={<AdminDashboard />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </ErrorBoundary>
+          <AuthDependentHooks>
+            <DataProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/*" element={
+                    <ProtectedRoute>
+                      <div className="flex min-h-screen w-full">
+                        <Sidebar />
+                        <div className="flex-1">
+                          <ErrorBoundary>
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/tickets" element={<Tickets />} />
+                              <Route path="/chat" element={<Chat />} />
+                              <Route path="/analytics" element={<Analytics />} />
+                              <Route path="/customers" element={<Customers />} />
+                              <Route path="/admin" element={<AdminDashboard />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </ErrorBoundary>
+                        </div>
                       </div>
-                    </div>
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </BrowserRouter>
-          </DataProvider>
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+              </BrowserRouter>
+            </DataProvider>
+          </AuthDependentHooks>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
