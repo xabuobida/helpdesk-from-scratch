@@ -1,14 +1,20 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ActivityItem } from '@/types/ticket';
 
 export const useActivities = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     fetchActivities();
+    
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
     
     // Set up real-time subscription for activities
     const channel = supabase
@@ -23,15 +29,16 @@ export const useActivities = () => {
         () => {
           fetchActivities();
         }
-      );
+      )
+      .subscribe();
 
-    // Only subscribe if the channel is not already subscribed
-    if (channel.state === 'closed') {
-      channel.subscribe();
-    }
+    channelRef.current = channel;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []);
 
