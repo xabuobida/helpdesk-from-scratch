@@ -23,8 +23,12 @@ export const useActivities = () => {
         () => {
           fetchActivities();
         }
-      )
-      .subscribe();
+      );
+
+    // Only subscribe if the channel is not already subscribed
+    if (channel.state === 'closed') {
+      channel.subscribe();
+    }
 
     return () => {
       supabase.removeChannel(channel);
