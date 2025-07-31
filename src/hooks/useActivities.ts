@@ -12,6 +12,7 @@ export const useActivities = () => {
     
     // Clean up any existing channel first
     if (channelRef.current) {
+      channelRef.current.unsubscribe();
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -36,6 +37,7 @@ export const useActivities = () => {
 
     return () => {
       if (channelRef.current) {
+        channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
