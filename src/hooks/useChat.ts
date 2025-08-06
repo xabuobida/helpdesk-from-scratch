@@ -194,66 +194,32 @@ export const useChat = () => {
     }
   };
 
-  // Enhanced real-time subscriptions
+  // Real-time updates are handled globally in AuthContext to prevent conflicts
+  // Local updates for selected chat messages only
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedChat) return;
 
-    console.log('Setting up real-time subscriptions for user:', user.id);
+    console.log('Setting up message subscription for chat:', selectedChat.id);
 
-    // Subscribe to chat room changes
-    const roomsChannel = supabase
-      .channel('chat-rooms-real-time')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_rooms',
-          filter: user.role === 'customer' ? `customer_id=eq.${user.id}` : undefined
-        },
-        (payload) => {
-          console.log('Chat room change detected:', payload);
-          fetchChatRooms();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to message changes for all chat rooms
     const messagesChannel = supabase
-      .channel('chat-messages-real-time')
+      .channel(`chat-messages-${selectedChat.id}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages'
+          table: 'chat_messages',
+          filter: `chat_room_id=eq.${selectedChat.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
-          const newMessage = payload.new as any;
-          
-          // If message is for the currently selected chat, add it to messages
-          if (selectedChat && newMessage.chat_room_id === selectedChat.id) {
-            fetchMessages(selectedChat.id);
-          }
-          
-          // Show toast notification for new messages from others
-          if (newMessage.sender_id !== user.id) {
-            toast({
-              title: "New Message",
-              description: "You have a new message",
-            });
-          }
-          
-          // Refresh chat rooms to update timestamps
-          fetchChatRooms();
+          console.log('New message in selected chat:', payload);
+          fetchMessages(selectedChat.id);
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscriptions');
-      supabase.removeChannel(roomsChannel);
+      console.log('Cleaning up message subscription');
       supabase.removeChannel(messagesChannel);
     };
   }, [user, selectedChat?.id]);

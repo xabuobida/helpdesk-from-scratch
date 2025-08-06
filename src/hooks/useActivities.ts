@@ -1,47 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ActivityItem } from '@/types/ticket';
 
 export const useActivities = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     fetchActivities();
     
-    // Clean up any existing channel first
-    if (channelRef.current) {
-      channelRef.current.unsubscribe();
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    
-    // Set up real-time subscription for activities
-    const channel = supabase
-      .channel('activities-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'activities'
-        },
-        () => {
-          fetchActivities();
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
+    // Don't set up real-time subscriptions here to avoid conflicts
+    // Real-time notifications are handled globally in AuthContext
   }, []);
 
   const fetchActivities = async () => {

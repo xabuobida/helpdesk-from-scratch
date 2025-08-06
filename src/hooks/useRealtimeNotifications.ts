@@ -14,6 +14,7 @@ export const useRealtimeNotifications = () => {
       // Clean up when user logs out
       if (channelRef.current) {
         console.log('Cleaning up notification subscriptions - user logged out');
+        channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -28,8 +29,8 @@ export const useRealtimeNotifications = () => {
 
     console.log('Setting up real-time notifications for user:', user.id);
 
-    // Create a single channel for all notifications
-    const channel = supabase.channel(`user-notifications-${user.id}`);
+    // Create a unique channel for this user's notifications
+    const channel = supabase.channel(`user-notifications-${user.id}-${Date.now()}`);
 
     // Subscribe to chat messages for customers
     if (user.role === 'customer') {
@@ -207,6 +208,7 @@ export const useRealtimeNotifications = () => {
     return () => {
       console.log('Cleaning up notification subscriptions');
       if (channelRef.current) {
+        channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
