@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/FirebaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,14 +42,8 @@ const AuthForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!databaseInitialized) {
-      toast({
-        title: "Database Not Ready",
-        description: "Please initialize the database first by clicking the 'Initialize Database' button.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Firebase doesn't need database initialization
+    // Remove this check for Firebase
     
     if (!email || !password) {
       toast({
@@ -102,16 +96,16 @@ const AuthForm = ({
           });
           navigate('/');
         } else {
-          if (result.error?.code === 'email_not_confirmed') {
-            toast({
-              title: "Email Not Confirmed",
-              description: "Please check your email and click the confirmation link before logging in.",
-              variant: "destructive",
-            });
-          } else if (result.error?.code === 'invalid_credentials') {
+          if (result.error?.code === 'auth/user-not-found' || result.error?.code === 'auth/wrong-password') {
             toast({
               title: "Invalid Credentials",
               description: "Invalid email or password. Please check your credentials and try again.",
+              variant: "destructive",
+            });
+          } else if (result.error?.code === 'auth/user-disabled') {
+            toast({
+              title: "Account Disabled",
+              description: "This account has been disabled. Please contact support.",
               variant: "destructive",
             });
           } else {
@@ -171,7 +165,7 @@ const AuthForm = ({
             onChange={(e) => setName(e.target.value)}
             required={!isLogin}
             placeholder="Enter your full name"
-            disabled={!databaseInitialized}
+            disabled={false}
           />
         </div>
       )}
@@ -185,7 +179,7 @@ const AuthForm = ({
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="Enter your email address"
-          disabled={!databaseInitialized}
+          disabled={false}
         />
       </div>
       
@@ -200,7 +194,7 @@ const AuthForm = ({
             required
             placeholder={isLogin ? "Enter your password" : "Create a password (min 6 characters)"}
             minLength={6}
-            disabled={!databaseInitialized}
+            disabled={false}
           />
           <Button
             type="button"
@@ -208,7 +202,7 @@ const AuthForm = ({
             size="sm"
             className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
             onClick={() => setShowPassword(!showPassword)}
-            disabled={!databaseInitialized}
+            disabled={false}
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -222,7 +216,7 @@ const AuthForm = ({
       {!isLogin && (
         <div>
           <Label htmlFor="role">Account Type</Label>
-          <Select value={role} onValueChange={setRole} disabled={!databaseInitialized}>
+          <Select value={role} onValueChange={setRole} disabled={false}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -238,7 +232,7 @@ const AuthForm = ({
       <Button 
         type="submit" 
         className="w-full"
-        disabled={loading || !databaseInitialized}
+        disabled={loading}
       >
         {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
       </Button>
@@ -248,7 +242,7 @@ const AuthForm = ({
           type="button"
           onClick={toggleMode}
           className="text-indigo-600 hover:text-indigo-800 text-sm"
-          disabled={!databaseInitialized}
+          disabled={false}
         >
           {isLogin 
             ? "Don't have an account? Create one" 

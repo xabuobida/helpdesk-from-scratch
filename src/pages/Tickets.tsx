@@ -7,10 +7,11 @@ import { CreateTicketModal } from "@/components/CreateTicketModal";
 import { TicketDetailModal } from "@/components/TicketDetailModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivities } from "@/hooks/useActivities";
-import { useTicketManagement } from "@/hooks/useTicketManagement";
+
 import { useTicketFiltering } from "@/hooks/useTicketFiltering";
 import { Ticket } from "@/types/ticket";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseTickets } from "@/hooks/useFirebaseTickets";
 import { Plus } from "lucide-react";
 const Tickets = () => {
   const { user } = useAuth();
@@ -21,15 +22,13 @@ const Tickets = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
-  // Use custom hooks for ticket management and filtering
+  // Use Firebase hooks for ticket management
   const {
     tickets,
-    profiles,
-    loading,
-    ticketsLoading,
-    handleCreateTicket,
-    handleUpdateTicket,
-  } = useTicketManagement();
+    loading: ticketsLoading,
+    createTicket,
+    updateTicket,
+  } = useFirebaseTickets();
 
   const { filteredTickets, getFilterCounts } = useTicketFiltering({
     tickets,
@@ -42,17 +41,40 @@ const Tickets = () => {
   };
 
   const onCreateTicket = async (ticketData: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt'>) => {
-    await handleCreateTicket(ticketData);
+    await createTicket({
+      title: ticketData.title,
+      description: ticketData.description,
+      priority: ticketData.priority,
+      category: ticketData.category,
+    });
     setShowCreateModal(false);
   };
 
   const onUpdateTicket = async (updatedTicket: Ticket) => {
-    await handleUpdateTicket(updatedTicket);
+    // Map status values for Firebase compatibility
+    const mapStatus = (status: string): 'open' | 'in-progress' | 'resolved' | 'closed' => {
+      switch (status) {
+        case 'unassigned': return 'open';
+        case 'assigned': return 'in-progress';
+        case 'in_progress': return 'in-progress';
+        case 'resolved': return 'resolved';
+        case 'closed': return 'closed';
+        default: return 'open';
+      }
+    };
+
+    await updateTicket(updatedTicket.id, {
+      title: updatedTicket.title,
+      description: updatedTicket.description,
+      status: mapStatus(updatedTicket.status),
+      priority: updatedTicket.priority,
+      category: updatedTicket.category,
+    });
     setSelectedTicket(updatedTicket);
   };
 
   // Show skeleton loading only on initial load
-  if (loading && !user) {
+  if (ticketsLoading && !user) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
@@ -123,7 +145,7 @@ const Tickets = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={onCreateTicket}
-        customers={profiles}
+        customers={[]}
       />
 
       {selectedTicket && (

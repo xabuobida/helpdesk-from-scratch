@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
 import { useSearchParams } from "react-router-dom";
 import { ChatList } from "@/components/chat/ChatList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
-import { useChat } from "@/hooks/useChat";
+import { useFirebaseChat } from "@/hooks/useFirebaseChat";
 const Chat = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -12,13 +12,13 @@ const Chat = () => {
   
   const {
     chatRooms,
-    selectedChat,
-    setSelectedChat,
+    activeRoom: selectedChat,
+    setActiveRoom: setSelectedChat,
     messages,
     loading,
     sendMessage,
-    updateChatStatus
-  } = useChat();
+    joinRoom
+  } = useFirebaseChat();
   
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +35,7 @@ const Chat = () => {
     
     // If agent selects a waiting chat, mark it as active and assign themselves
     if (user?.role !== 'customer' && chat.status === 'waiting' && !chat.agent_id) {
-      await updateChatStatus(chat.id, 'active', user.id);
+      await joinRoom(chat.id);
     }
   };
 
