@@ -1,7 +1,7 @@
 import { Calendar, Home, Inbox, Search, Settings, TicketIcon, Users, BarChart3, MessageSquare, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
 import UserMenu from "./UserMenu";
 
 const adminSidebarItems = [

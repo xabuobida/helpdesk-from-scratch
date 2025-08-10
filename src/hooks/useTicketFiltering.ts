@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Ticket } from "@/types/ticket";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
 
 interface UseTicketFilteringProps {
   tickets: Ticket[];

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ticket } from "@/types/ticket";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, User, Calendar, Tag } from "lucide-react";
 
